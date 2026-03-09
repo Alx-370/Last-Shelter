@@ -135,6 +135,30 @@
       </div>
     </section>
 
+
+    <section class="zone-title zone-title-colony">
+      <span>Colonie</span>
+      <small>Expansion, recrutement, défense avancée</small>
+    </section>
+
+    <section class="panel accordion-panel colony-shell">
+      <button class="accordion-trigger accordion-trigger--colony" id="colonyToggle" aria-expanded="false">
+          <span>
+            <strong>Colonie</strong>
+            <small id="colonyHeadText">Disponible après 30 jours de survie</small>
+          </span>
+        <span class="accordion-trigger-right">
+          <span class="section-badge section-badge--colony" id="colonyPhaseBadge">Abri</span>
+          <span class="accordion-icon">+</span>
+        </span>
+      </button>
+      <div class="accordion-content hidden" id="colonyContent">
+        <div class="panel-body panel-body--accordion panel-body--colony">
+          <div id="colonyPanel"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="zone-title zone-title-outside">
       <span>Exploration simple</span>
       <small>Aucune ressource requise</small>
@@ -240,7 +264,6 @@
     </div>
   </section>
 </div>
-
 
 <div id="toastContainer" class="toast-container"></div>
 
