@@ -4,150 +4,246 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1220" />
-  <title>Last Shelter V5.6.3 — Survie Zombie</title>
+  <title>Last Shelter V6 — Survie Zombie</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="startScreen" class="start-screen">
-    <div class="start-overlay"></div>
-    <section class="start-card">
-      <div class="eyebrow">V5.6.3</div>
-      <h1>Last Shelter</h1>
-      <p>Barre sticky compacte, exploration plus risquée et fin réelle si l’abri cède.</p>
-      <div class="start-actions">
-        <button id="continueBtn" class="btn primary large">Continuer</button>
-        <button id="newGameBtn" class="btn large">Nouvelle partie</button>
-        <button id="resetSaveBtn" class="btn ghost large">Réinitialiser la sauvegarde</button>
-      </div>
-    </section>
-  </div>
+<div id="startScreen" class="start-screen">
+  <div class="start-overlay"></div>
+  <section class="start-card">
+    <div class="eyebrow">V6 Exploration avancée</div>
 
-  <main class="app hidden" id="gameApp">
-    <section class="hero panel">
-      <div class="hero-top">
-        <div class="eyebrow">Survie zombie réaliste</div>
-        <button id="saveNowBtn" class="mini-btn">Sauvegarder</button>
-      </div>
-      <h1>Last Shelter</h1>
-      <p class="subtitle">Sticky compacte, infection possible dehors, abri vital.</p>
-      <div class="hero-meta">
-        <article class="meta-card"><span>Jour</span><strong id="dayLabel">1</strong></article>
-        <article class="meta-card"><span>Heure</span><strong id="timeLabel">Matin</strong></article>
-        <article class="meta-card"><span>Zone</span><strong id="locationLabel">Abri</strong></article>
-      </div>
-    </section>
+    <div class="start-kicker">Survie réaliste • Monde effondré • Chaque nuit compte</div>
 
-    <section class="sticky-wrap">
-      <section class="sticky-status panel">
-        <div class="sticky-bar-top">
-          <div class="sticky-group" id="stickyVitals"></div>
-          <div class="sticky-badge" id="statusSummary">Situation stable</div>
-        </div>
-        <div class="sticky-bar-bottom" id="stickyResources"></div>
-      </section>
-    </section>
+    <h1>Last Shelter</h1>
 
-    <section class="stack">
-      <section class="panel ambience-panel">
-        <div class="panel-head"><h2>Ambiance</h2><small id="weatherLabel">☀️ Temps clair</small></div>
-        <div class="panel-body"><p id="ambienceText" class="ambience-text"></p></div>
-      </section>
+    <p class="start-text">
+      La chute a déjà eu lieu. Il ne reste que le silence, la peur et ce qu’il faut arracher au monde pour survivre une nuit de plus.
+    </p>
 
-      <section class="panel inventory-panel inventory-panel--featured">
-        <div class="panel-head"><h2>Inventaire</h2><small>Ressources disponibles</small></div>
-        <div class="panel-body"><div class="inventory-list" id="inventoryList"></div></div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head"><h2>État détaillé</h2><small>Vue complète</small></div>
-        <div class="panel-body">
-          <div class="stats" id="statsGrid"></div>
-          <div class="chips" id="statusChips"></div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head"><h2>Situation actuelle</h2><small id="saveStateLabel">Aucune sauvegarde</small></div>
-        <div class="panel-body"><div class="overview" id="overviewGrid"></div></div>
-      </section>
-
-      <section class="zone-title zone-title-shelter"><span>Abri</span><small>Gestion, construction, récupération</small></section>
-
-      <section class="panel accordion-panel shelter-shell">
-        <button class="accordion-trigger" id="buildingsToggle" aria-expanded="false">
-          <span><strong>Améliorations de l'abri</strong><small>Production et survie longue durée</small></span>
-          <span class="accordion-icon">+</span>
-        </button>
-        <div class="accordion-content hidden" id="buildingsContent">
-          <div class="panel-body panel-body--accordion"><div class="buildings" id="buildingsGrid"></div></div>
-        </div>
-      </section>
-
-      <section class="zone-title zone-title-outside"><span>Extérieur</span><small>Exploration, risque, butin</small></section>
-
-      <section class="panel accordion-panel outside-shell">
-        <button class="accordion-trigger" id="explorationToggle" aria-expanded="false">
-          <span><strong>Exploration</strong><small>Sorties risquées</small></span>
-          <span class="accordion-icon">+</span>
-        </button>
-        <div class="accordion-content hidden" id="explorationContent">
-          <div class="panel-body panel-body--accordion"><div class="locations" id="locationsGrid"></div></div>
-        </div>
-      </section>
-
-      <section class="panel accordion-panel">
-        <button class="accordion-trigger" id="journalToggle" aria-expanded="false">
-          <span><strong>Journal</strong><small>Événements classés par jour</small></span>
-          <span class="accordion-icon">+</span>
-        </button>
-        <div class="accordion-content hidden" id="journalContent">
-          <div class="panel-body panel-body--accordion"><div class="journal-days" id="journalDays"></div></div>
-        </div>
-      </section>
-    </section>
-  </main>
-
-  <section class="sticky-actions hidden" id="stickyActions">
-    <div class="sticky-actions-main">
-      <button class="action-pill" data-action="sleep">🌙<span>Dormir</span></button>
-      <button class="action-pill" data-action="eat">🍖<span>Manger</span></button>
-      <button class="action-pill" data-action="drink">💧<span>Boire</span></button>
-      <button class="action-pill" data-action="heal">🩹<span>Soigner</span></button>
-      <button class="action-pill more" id="moreActionsBtn">＋<span>Plus</span></button>
+    <div class="start-features">
+      <span>🛡️ Abri à protéger</span>
+      <span>🌙 Nuits dangereuses</span>
+      <span>🔍 Explorations à risque</span>
     </div>
-    <div class="sticky-actions-more hidden" id="moreActionsPanel">
-      <button class="action-pill" data-action="relax">🫁<span>Se détendre</span></button>
-      <button class="action-pill" data-action="fortify">🧱<span>Renforcer</span></button>
-      <button class="action-pill danger" data-action="night-watch">👁️<span>Garde</span></button>
-      <button class="action-pill" data-action="next">⏱️<span>Temps</span></button>
+
+    <div class="start-actions">
+      <button id="continueBtn" class="btn primary large">Continuer</button>
+      <button id="newGameBtn" class="btn large">Nouvelle partie</button>
+      <button id="resetSaveBtn" class="btn ghost large">Réinitialiser la sauvegarde</button>
+    </div>
+  </section>
+</div>
+
+<main class="app hidden" id="gameApp">
+  <section class="hero panel">
+    <div class="hero-top">
+      <div class="eyebrow">Survie zombie réaliste</div>
+      <button id="saveNowBtn" class="mini-btn">Sauvegarder</button>
+    </div>
+
+    <h1>Last Shelter</h1>
+    <p class="subtitle">Les sorties simples permettent de tenir. Les expéditions dangereuses permettent de changer la partie.</p>
+
+    <div class="hero-meta">
+      <article class="meta-card">
+        <span>Jour</span>
+        <strong id="dayLabel">1</strong>
+      </article>
+      <article class="meta-card">
+        <span>Heure</span>
+        <strong id="timeLabel">Matin</strong>
+      </article>
+      <article class="meta-card">
+        <span>Zone</span>
+        <strong id="locationLabel">Abri</strong>
+      </article>
     </div>
   </section>
 
-  <div id="eventModal" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <section class="modal-card">
-      <div class="eyebrow">Événement</div>
-      <h2 id="eventTitle">Événement</h2>
-      <p id="eventText" class="modal-text"></p>
-      <div class="choice-list" id="eventChoices"></div>
+  <section class="sticky-wrap">
+    <section class="sticky-status panel">
+      <div class="sticky-bar-top">
+        <div class="sticky-group" id="stickyVitals"></div>
+        <div class="sticky-badge" id="statusSummary">Situation stable</div>
+      </div>
+      <div class="sticky-bar-bottom" id="stickyResources"></div>
     </section>
-  </div>
+  </section>
 
-  <div id="gameOverScreen" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <section class="modal-card game-over-card">
-      <div class="eyebrow">Fin de survie</div>
-      <h2>Game Over</h2>
-      <p id="gameOverReason" class="modal-text"></p>
-      <div class="game-over-grid" id="gameOverStats"></div>
-      <div class="choice-list">
-        <button id="restartBtn" class="btn primary"><strong>Recommencer</strong><span>Lancer une nouvelle partie</span></button>
-        <button id="backMenuBtn" class="btn"><strong>Retour menu</strong><span>Revenir à l’écran d’accueil</span></button>
+  <section class="stack">
+    <section class="panel ambience-panel">
+      <div class="panel-head">
+        <h2>Ambiance</h2>
+        <small id="weatherLabel">☀️ Temps clair</small>
+      </div>
+      <div class="panel-body">
+        <p id="ambienceText" class="ambience-text"></p>
       </div>
     </section>
-  </div>
 
-  <div id="toastContainer" class="toast-container"></div>
-  <script src="app.js"></script>
+    <section class="panel inventory-panel inventory-panel--featured">
+      <div class="panel-head">
+        <h2>Inventaire</h2>
+        <small>Ressources disponibles</small>
+      </div>
+      <div class="panel-body">
+        <div class="inventory-list" id="inventoryList"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>État détaillé</h2>
+        <small>Vue complète</small>
+      </div>
+      <div class="panel-body">
+        <div class="status-chips-wrap">
+          <div class="chips" id="statusChips"></div>
+        </div>
+        <div class="stats" id="statsGrid"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Situation actuelle</h2>
+        <small id="saveStateLabel">Aucune sauvegarde</small>
+      </div>
+      <div class="panel-body">
+        <div class="overview" id="overviewGrid"></div>
+      </div>
+    </section>
+
+    <section class="zone-title zone-title-shelter">
+      <span>Abri</span>
+      <small>Gestion, construction, récupération</small>
+    </section>
+
+    <section class="panel accordion-panel shelter-shell">
+      <button class="accordion-trigger" id="buildingsToggle" aria-expanded="false">
+          <span>
+            <strong>Améliorations de l'abri</strong>
+            <small>Production et survie longue durée</small>
+          </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="buildingsContent">
+        <div class="panel-body panel-body--accordion">
+          <div class="buildings" id="buildingsGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="zone-title zone-title-outside">
+      <span>Exploration simple</span>
+      <small>Aucune ressource requise</small>
+    </section>
+
+    <section class="panel accordion-panel outside-shell">
+      <button class="accordion-trigger" id="simpleToggle" aria-expanded="false">
+          <span>
+            <strong>Sorties simples</strong>
+            <small>Faible coût, butin modéré</small>
+          </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="simpleContent">
+        <div class="panel-body panel-body--accordion">
+          <div class="locations" id="simpleLocationsGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="zone-title zone-title-danger">
+      <span>Exploration dangereuse</span>
+      <small>Munitions et carburant requis</small>
+    </section>
+
+    <section class="panel accordion-panel danger-shell">
+      <button class="accordion-trigger" id="dangerousToggle" aria-expanded="false">
+          <span>
+            <strong>Expéditions dangereuses</strong>
+            <small>Coût élevé, gros butin</small>
+          </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="dangerousContent">
+        <div class="panel-body panel-body--accordion">
+          <div class="locations" id="dangerousLocationsGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel accordion-panel">
+      <button class="accordion-trigger" id="journalToggle" aria-expanded="false">
+          <span>
+            <strong>Journal</strong>
+            <small>Événements classés par jour</small>
+          </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="journalContent">
+        <div class="panel-body panel-body--accordion">
+          <div class="journal-days" id="journalDays"></div>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<section class="sticky-actions hidden" id="stickyActions">
+  <div class="sticky-actions-main">
+    <button class="action-pill" data-action="sleep">🌙<span>Dormir</span></button>
+    <button class="action-pill" data-action="eat">🍖<span>Manger</span></button>
+    <button class="action-pill" data-action="drink">💧<span>Boire</span></button>
+    <button class="action-pill" data-action="heal">🩹<span>Soigner</span></button>
+    <button class="action-pill more" id="moreActionsBtn">＋<span>Plus</span></button>
+  </div>
+  <div class="sticky-actions-more hidden" id="moreActionsPanel">
+    <button class="action-pill" data-action="relax">🫁<span>Se détendre</span></button>
+    <button class="action-pill" data-action="fortify">🧱<span>Renforcer</span></button>
+    <button class="action-pill danger" data-action="night-watch">👁️<span>Garde</span></button>
+    <button class="action-pill" data-action="patrol">🚶<span>Patrouiller</span></button>
+    <button class="action-pill" data-action="secure-zone">🛡️<span>Sécuriser</span></button>
+    <button class="action-pill danger" data-action="clear-threat">🔫<span>Éliminer</span></button>
+    <button class="action-pill" data-action="next">⏱️<span>Temps</span></button>
+  </div>
+</section>
+
+<div id="eventModal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <section class="modal-card">
+    <div class="eyebrow">Événement</div>
+    <h2 id="eventTitle">Événement</h2>
+    <p id="eventText" class="modal-text"></p>
+    <div class="choice-list" id="eventChoices"></div>
+  </section>
+</div>
+
+<div id="gameOverScreen" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <section class="modal-card game-over-card">
+    <div class="eyebrow">Fin de survie</div>
+    <h2>Game Over</h2>
+    <p id="gameOverReason" class="modal-text"></p>
+    <div class="game-over-grid" id="gameOverStats"></div>
+    <div class="choice-list">
+      <button id="restartBtn" class="btn primary">
+        <strong>Recommencer</strong>
+        <span>Lancer une nouvelle partie</span>
+      </button>
+      <button id="backMenuBtn" class="btn">
+        <strong>Retour menu</strong>
+        <span>Revenir à l’écran d’accueil</span>
+      </button>
+    </div>
+  </section>
+</div>
+
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="app.js"></script>
 </body>
 </html>
