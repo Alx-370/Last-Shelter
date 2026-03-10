@@ -21,7 +21,26 @@ const icons = {
     fuel: '⛽'
 };
 
-const colonyFoundingCost = { materials: 12, food: 8, water: 8, ammo: 2, fuel: 1 };
+const rarityWeights = {
+    common: 60,
+    rare: 25,
+    elite: 10,
+    legendary: 5
+};
+
+const resourceLabels = {
+    food: 'nourriture',
+    water: 'eau',
+    bandage: 'bandage',
+    medicine: 'médicament',
+    ammo: 'munition',
+    materials: 'matériaux',
+    fuel: 'carburant'
+};
+
+const lootableResources = Object.keys(icons);
+
+const colonyFoundingCost = { materials: 12, food: 8, water: 8, ammo: 2, fuel: 5 };
 
 const colonyUpgradeDefs = [
     {
@@ -114,25 +133,18 @@ const colonyRecruitPool = [
     { name: 'Ptit Mika', age: 31, rarity: 'elite', trait: 'Ancien geek pro', role: 'defense', skills: { exploration: 10, defense: 4, medicine: 3, construction: 5, production: 5 } },
     { name: 'Yanis Corbin', age: 39, rarity: 'common', trait: 'Endurant', role: 'production', skills: { exploration: 5, defense: 5, medicine: 2, construction: 5, production: 8 } },
     { name: 'Sacha Brume', age: 34, rarity: 'rare', trait: 'Ancien militaire', role: 'defense', skills: { exploration: 5, defense: 9, medicine: 1, construction: 4, production: 3 } },
-    { name: 'Eva Morel', age: 30, rarity: 'common', trait: 'Calme', role: 'rest', skills: { exploration: 4, defense: 4, medicine: 5, construction: 5, production: 5 } }
+    { name: 'Eva Morel', age: 30, rarity: 'common', trait: 'Calme', role: 'rest', skills: { exploration: 4, defense: 4, medicine: 5, construction: 5, production: 5 } },
+    { name: 'Alexis Moreau', age: 34, rarity: 'legendary', trait: 'Chef de guerre', role: 'rest', skills: { exploration: 10, defense: 10, medicine: 7, construction: 7, production: 10 } }
 ];
 
 const simpleLocations = [
     {
         id: 'house',
         name: 'Maison abandonnée',
-        risk: 28,
+        risk: 26,
         loot: 'nourriture',
         desc: 'Placards vides mais parfois encore utiles.',
-        rewards: { food: [1, 3], water: [0, 1], materials: [0, 2], bandage: [0, 1] }
-    },
-    {
-        id: 'garage',
-        name: 'Garage local',
-        risk: 34,
-        loot: 'matériaux',
-        desc: 'Ferraille, outils et bazar mécanique.',
-        rewards: { materials: [1, 3], water: [0, 1], fuel: [0, 1] }
+        rewards: { food: [0, 2], water: [0, 2], materials: [0, 2], bandage: [0, 1] }
     },
     {
         id: 'apartment',
@@ -140,7 +152,15 @@ const simpleLocations = [
         risk: 30,
         loot: 'eau',
         desc: 'Peu de place, peu de bruit, peu de surprise.',
-        rewards: { food: [0, 2], water: [1, 2], bandage: [0, 1] }
+        rewards: { food: [1, 3], water: [1, 2], bandage: [0, 1] }
+    },
+    {
+        id: 'garage',
+        name: 'Garage local',
+        risk: 34,
+        loot: 'matériaux',
+        desc: 'Ferraille, outils et bazar mécanique.',
+        rewards: { materials: [1, 3], ammo: [0, 2], fuel: [1, 2] }
     },
     {
         id: 'shop',
@@ -148,46 +168,46 @@ const simpleLocations = [
         risk: 38,
         loot: 'provisions',
         desc: 'Quelques rayons encore exploitables.',
-        rewards: { food: [1, 3], water: [1, 2], materials: [0, 1] }
+        rewards: { food: [2, 3], water: [1, 3], materials: [0, 3], fuel: [0, 1] }
     }
 ];
 
 const dangerousLocations = [
     {
-        id: 'hospital',
-        name: 'Hôpital',
-        risk: 72,
-        loot: 'médical',
-        cost: { ammo: 2 },
-        desc: 'Très riche mais infecté et instable.',
-        rewards: { bandage: [2, 4], medicine: [1, 3], food: [0, 1], water: [0, 1] }
-    },
-    {
-        id: 'police',
-        name: 'Commissariat',
-        risk: 78,
-        loot: 'munitions',
-        cost: { ammo: 2, fuel: 1 },
-        desc: 'Zone tendue avec gros potentiel de loot.',
-        rewards: { ammo: [2, 5], materials: [1, 3], bandage: [0, 1] }
-    },
-    {
         id: 'station',
         name: 'Station-service',
         risk: 64,
         loot: 'carburant',
-        cost: { ammo: 1, fuel: 1 },
+        cost: { ammo: 2, fuel: 2 },
         desc: 'Exposée mais utile pour durer.',
-        rewards: { fuel: [2, 4], water: [0, 1], materials: [1, 2] }
+        rewards: { fuel: [4, 6], water: [0, 2], materials: [2, 4] }
     },
     {
         id: 'warehouse',
         name: 'Entrepôt',
         risk: 70,
         loot: 'gros stock',
-        cost: { ammo: 2 },
+        cost: { ammo: 3 },
         desc: 'Grand espace, gros bruit, bonne rentabilité.',
-        rewards: { food: [2, 5], materials: [2, 5], water: [1, 2] }
+        rewards: { food: [4, 6], materials: [4, 8], water: [2, 4] }
+    },
+    {
+        id: 'hospital',
+        name: 'Hôpital',
+        risk: 74,
+        loot: 'médical',
+        cost: { ammo: 3, fuel: 3 },
+        desc: 'Très riche mais infecté et instable.',
+        rewards: { bandage: [3, 6], medicine: [2, 4], food: [0, 2], water: [0, 2] }
+    },
+    {
+        id: 'police',
+        name: 'Commissariat',
+        risk: 78,
+        loot: 'munitions',
+        cost: { ammo: 3, fuel: 3 },
+        desc: 'Zone tendue avec gros potentiel de loot.',
+        rewards: { ammo: [4, 8], materials: [2, 5], bandage: [0, 2] }
     }
 ];
 
@@ -207,10 +227,19 @@ const simpleEvents = [
                 label: 'Fouiller',
                 desc: 'Petit gain possible',
                 effect(s) {
-                    s.inventory.food += 1;
-                    s.statsSummary.resourcesFound += 1;
-                    addLog('Placard oublié', 'Tu trouves une ration coincée derrière une boîte vide.', 'Événement');
-                    toast('Petit gain', '+1 ration.', 'success');
+                    const loot = giveRandomLoot(s, 1, 1);
+
+                    addLog(
+                        'Placard oublié',
+                        `Tu trouves ${loot.text} coincé derrière une boîte vide.`,
+                        'Événement'
+                    );
+
+                    toast(
+                        'Petit gain',
+                        `+${loot.text}.`,
+                        'success'
+                    );
                 }
             },
             {
@@ -232,10 +261,21 @@ const simpleEvents = [
                 label: 'Continuer',
                 desc: 'Risque d’infection',
                 effect(s) {
+                    const loot = giveRandomLoot(s, 1, 2);
                     s.stats.health = clamp(s.stats.health - 4);
                     s.stats.infection = clamp(s.stats.infection + 8);
-                    addLog('Coupure sale', 'La blessure est légère, mais l’infection monte.', 'Danger');
-                    toast('Infection', 'Infection +8. Santé -4.', 'danger');
+
+                    addLog(
+                        'Coupure sale',
+                        `La blessure est légère, mais l’infection monte. Malgré ça, tu récupères ${loot.text}.`,
+                        'Danger'
+                    );
+
+                    toast(
+                        'Blessure et loot',
+                        `Infection +8, Santé -4, +${loot.text}.`,
+                        'danger'
+                    );
                 }
             },
             {
@@ -262,10 +302,20 @@ const dangerousEvents = [
                 desc: 'Loot possible, infection',
                 effect(s) {
                     s.stats.infection = clamp(s.stats.infection + 12);
-                    s.inventory.medicine += 1;
-                    s.statsSummary.resourcesFound += 1;
-                    addLog('Air contaminé', 'Tu insistes malgré l’air toxique et récupères un médicament.', 'Danger');
-                    toast('Air contaminé', 'Infection +12, +1 médicament.', 'danger');
+
+                    const loot = giveRandomLoot(s, 1, 2);
+
+                    addLog(
+                        'Air contaminé',
+                        `Tu insistes malgré l’air toxique et récupères ${loot.text}.`,
+                        'Danger'
+                    );
+
+                    toast(
+                        'Air contaminé',
+                        `Infection +12, +${loot.text}.`,
+                        'danger'
+                    );
                 }
             },
             {
@@ -289,10 +339,20 @@ const dangerousEvents = [
                 effect(s) {
                     s.stats.health = clamp(s.stats.health - 6);
                     s.stats.infection = clamp(s.stats.infection + 10);
-                    s.inventory.materials += 2;
-                    s.statsSummary.resourcesFound += 2;
-                    addLog('Salle infestée', 'Tu forces le passage et ressors avec du matériel.', 'Danger');
-                    toast('Sortie brutale', 'Santé -6, infection +10, +2 matériaux.', 'danger');
+
+                    const loot = giveRandomLoot(s, 2, 3);
+
+                    addLog(
+                        'Salle infestée',
+                        `Tu forces le passage et ressors avec ${loot.text}.`,
+                        'Danger'
+                    );
+
+                    toast(
+                        'Sortie brutale',
+                        `Santé -6, infection +10, +${loot.text}.`,
+                        'danger'
+                    );
                 }
             },
             {
@@ -488,6 +548,52 @@ function randomInt(min, max) {
 
 function pick(arr) {
     return arr[randomInt(0, arr.length - 1)];
+}
+
+function getRarityWeight(rarity) {
+    return rarityWeights[rarity] || 1;
+}
+
+function pickWeightedByRarity(pool) {
+    if (!pool.length) return null;
+
+    const expanded = [];
+
+    pool.forEach(candidate => {
+        const weight = getRarityWeight(candidate.rarity);
+        for (let i = 0; i < weight; i++) {
+            expanded.push(candidate);
+        }
+    });
+
+    return pick(expanded);
+}
+
+function formatResourceAmount(resource, amount) {
+    if (resource === 'ammo') return `${amount} munition${amount > 1 ? 's' : ''}`;
+    if (resource === 'materials') return amount > 1 ? `${amount} matériaux` : '1 matériau';
+    if (resource === 'food') return `${amount} ration${amount > 1 ? 's' : ''}`;
+    if (resource === 'water') return `${amount} eau`;
+    if (resource === 'medicine') return `${amount} médicament${amount > 1 ? 's' : ''}`;
+    if (resource === 'bandage') return `${amount} bandage${amount > 1 ? 's' : ''}`;
+    if (resource === 'fuel') return `${amount} carburant`;
+    return `${amount} ${resourceLabels[resource] || resource}`;
+}
+
+function giveRandomLoot(targetState, min = 1, max = 1, allowedResources = lootableResources) {
+    const resource = pick(allowedResources);
+    const amount = randomInt(min, max);
+
+    targetState.inventory[resource] = (targetState.inventory[resource] || 0) + amount;
+    targetState.statsSummary.resourcesFound += amount;
+
+    return {
+        resource,
+        amount,
+        label: resourceLabels[resource] || resource,
+        text: formatResourceAmount(resource, amount),
+        icon: icons[resource] || '📦'
+    };
 }
 
 function save() {
@@ -886,36 +992,58 @@ function assignColonistRole(id, role) {
 
 function recruitColonist() {
     if (!state.colony.founded) return;
+
     if (state.colony.colonists.length >= state.colony.capacity) {
         toast('Colonie pleine', 'Améliore le dortoir pour accueillir plus de monde.', 'warning');
         return;
     }
+
     if (state.colony.recruitCooldown > 0) {
         toast('Aucun contact stable', 'Laisse passer une journée avant une nouvelle tentative.', 'warning');
         return;
     }
+
     if (!payCost({ food: 2, water: 2 })) {
         toast('Accueil impossible', 'Il faut au moins 2 nourritures et 2 eaux pour accueillir quelqu’un.', 'warning');
         return;
     }
+
     const used = new Set(state.colony.colonists.map(c => c.name));
     const pool = colonyRecruitPool.filter(c => !used.has(c.name));
+
     if (!pool.length) {
         toast('Aucun survivant repéré', 'Plus aucun profil disponible pour l’instant.', 'info');
         return;
     }
-    const rareChance = Math.random();
-    let candidatePool = pool;
-    if (rareChance > 0.82) {
-        const elites = pool.filter(c => c.rarity !== 'common');
-        if (elites.length) candidatePool = elites;
+
+    const template = pickWeightedByRarity(pool);
+
+    if (!template) {
+        toast('Recrutement impossible', 'Aucun profil valide disponible.', 'warning');
+        return;
     }
-    const template = pick(candidatePool);
+
     const colon = createColonistFromTemplate(template, state.colony.colonists.length);
     state.colony.colonists.push(colon);
     state.colony.recruitCooldown = 2;
-    addLog('Nouveau colon', `${colon.name} rejoint la colonie en tant que ${getRoleLabel(colon.role).toLowerCase()}.`, 'Colonie');
-    toast('Nouveau survivant', `${colon.name} rejoint la colonie.`, template.rarity === 'elite' ? 'success' : 'info', 3200);
+
+    addLog(
+        'Nouveau colon',
+        `${colon.name} rejoint la colonie en tant que ${getRoleLabel(colon.role).toLowerCase()} (${getRarityLabel(colon.rarity).toLowerCase()}).`,
+        'Colonie'
+    );
+
+    toast(
+        'Nouveau survivant',
+        `${colon.name} rejoint la colonie (${getRarityLabel(colon.rarity)}).`,
+        template.rarity === 'legendary'
+            ? 'success'
+            : template.rarity === 'elite'
+                ? 'success'
+                : 'info',
+        3200
+    );
+
     updateColonyDerivedStats();
     save();
     render();
@@ -980,13 +1108,11 @@ function processColonyDay() {
             c.fatigue = clamp(c.fatigue + randomInt(10, 18));
             c.morale = clamp(c.morale + randomInt(1, 4));
             c.status = 'mission';
-        }
-        else if (c.role === 'defense') {
+        } else if (c.role === 'defense') {
             c.fatigue = clamp(c.fatigue + randomInt(4, 8));
             c.morale = clamp(c.morale + 2);
             c.status = 'guarding';
-        }
-        else if (c.role === 'medicine') {
+        } else if (c.role === 'medicine') {
             const weakest = colonists.filter(x => x.health < 96).sort((a, b) => a.health - b.health)[0];
 
             if (weakest) {
@@ -1000,15 +1126,13 @@ function processColonyDay() {
             c.fatigue = clamp(c.fatigue + randomInt(3, 6));
             c.morale = clamp(c.morale + 1);
             c.status = 'working';
-        }
-        else if (c.role === 'construction') {
+        } else if (c.role === 'construction') {
             state.inventory.materials += 1 + Math.floor((c.skills.construction + bonus.workshop) / 5);
             state.shelter = clamp(state.shelter + Math.max(1, Math.floor(c.skills.construction / 5)));
 
             c.fatigue = clamp(c.fatigue + randomInt(5, 9));
             c.status = 'working';
-        }
-        else if (c.role === 'production') {
+        } else if (c.role === 'production') {
             state.inventory.food += Math.max(1, Math.round(c.skills.production / 4));
             state.inventory.water += Math.max(1, Math.round(c.skills.production / 4));
 
@@ -1018,8 +1142,7 @@ function processColonyDay() {
 
             c.fatigue = clamp(c.fatigue + randomInt(4, 8));
             c.status = 'working';
-        }
-        else {
+        } else {
             c.fatigue = clamp(c.fatigue - randomInt(12, 20));
             c.health = clamp(c.health + randomInt(5, 9));
             c.morale = clamp(c.morale + randomInt(4, 8));
@@ -1050,8 +1173,7 @@ function processColonyDay() {
 
         addLog('Raid contre la colonie', `La colonie repousse une attaque mais encaisse des dégâts. Défense ${colony.defense}.`, 'Colonie');
         toast('Raid nocturne', 'La colonie a été attaquée.', 'danger', 3200);
-    }
-    else if (colonists.length) {
+    } else if (colonists.length) {
         colonists.forEach(c => {
             if (c.role === 'defense') c.morale = clamp(c.morale + 2);
         });
@@ -1066,11 +1188,11 @@ function processColonyDay() {
 
 function startNewGame() {
     state = normalizeState(initialState());
-    addLog('Début de survie', 'Tu verrouilles l’abri. Les premières sorties décideront de tout.', 'Prologue');
+    addLog('Début de survie', 'Tu sécurises l’abri tant bien que mal. Les réserves sont limitées, le danger monte dehors, et les prochaines heures vont décider si tu peux vraiment tenir.', 'Prologue');
     toggleGame(true);
     save();
     render();
-    toast('Nouvelle partie', 'La V6.1 démarre.', 'success');
+    toast('Nouvelle partie', 'Bonne chance', 'success');
 }
 
 function continueGame() {
@@ -1179,9 +1301,9 @@ function nightEvent() {
     state.nightGuard = 0;
 
     if (attackRisk > 60) {
-        const dmg = randomInt(6, 14);
-        const shelterDmg = randomInt(8, 16);
-        const stressGain = randomInt(10, 18);
+        const dmg = randomInt(6, 9);
+        const shelterDmg = randomInt(8, 10);
+        const stressGain = randomInt(5, 9);
 
         state.stats.health = clamp(state.stats.health - dmg);
         state.shelter = Math.max(0, state.shelter - shelterDmg);
@@ -1292,7 +1414,7 @@ function handleAction(action) {
                 return;
             }
             state.inventory.materials -= 2;
-            state.shelter = clamp(state.shelter + 14);
+            state.shelter = clamp(state.shelter + 22);
             state.stats.energy = clamp(state.stats.energy - randomInt(6, 10));
             state.stats.stress = clamp(state.stats.stress - randomInt(2, 5));
             toast('Protection', 'L’abri est renforcé.', 'success');
@@ -1308,9 +1430,9 @@ function handleAction(action) {
             break;
 
         case 'relax':
-            state.stats.stress = clamp(state.stats.stress - randomInt(10, 18));
-            state.stats.morale = clamp(state.stats.morale + randomInt(3, 6));
-            state.stats.energy = clamp(state.stats.energy + 2);
+            state.stats.stress = clamp(state.stats.stress - randomInt(18, 30));
+            state.stats.morale = clamp(state.stats.morale + randomInt(12, 17));
+            state.stats.energy = clamp(state.stats.energy + 4);
             addLog('Moment de calme', 'Tu prends quelques minutes pour souffler et laisser la tension redescendre.', 'Mental');
             toast('Se détendre', `Stress : ${getStressState(state.stats.stress)}.`, 'success');
             advanceTime();

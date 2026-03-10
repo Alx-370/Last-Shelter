@@ -1070,9 +1070,33 @@ button{
   position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);padding:4px 8px;border-radius:999px;font-size:.62rem;
   font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(30,41,59,.95);border:1px solid rgba(255,255,255,.08)
 }
-.rarity-common .rarity-pill{color:#cbd5e1}
-.rarity-rare .rarity-pill{color:#fbbf24}
-.rarity-elite .rarity-pill{color:#a78bfa}
+.rarity-common .rarity-pill{
+  color:#cbd5e1;
+  background:linear-gradient(135deg, rgba(71,85,105,.28), rgba(30,41,59,.18));
+  border-color:rgba(148,163,184,.22);
+  box-shadow:0 6px 14px rgba(15,23,42,.18);
+}
+
+.rarity-rare .rarity-pill{
+  color:#ffd166;
+  background:linear-gradient(135deg, rgba(245,158,11,.24), rgba(251,191,36,.12));
+  border-color:rgba(251,191,36,.28);
+  box-shadow:0 6px 16px rgba(245,158,11,.18);
+}
+
+.rarity-elite .rarity-pill{
+  color:#c4b5fd;
+  background:linear-gradient(135deg, rgba(139,92,246,.24), rgba(167,139,250,.12));
+  border-color:rgba(167,139,250,.28);
+  box-shadow:0 6px 16px rgba(139,92,246,.18);
+}
+
+.rarity-legendary .rarity-pill{
+  color:#ffefb0;
+  background:linear-gradient(135deg, rgba(251,191,36,.30), rgba(245,158,11,.16));
+  border-color:rgba(251,191,36,.36);
+  box-shadow:0 8px 20px rgba(245,158,11,.24);
+}
 .colon-identity h3{margin:0;font-size:1.08rem;color:#f8fafc}
 .colon-identity p{margin:4px 0 0;font-size:.88rem;color:#94a3b8}
 .status-pill{padding:8px 12px;border-radius:999px;font-size:.74rem;font-weight:700;white-space:nowrap;border:1px solid rgba(255,255,255,.08);background:rgba(15,23,42,.92);color:#e2e8f0}
