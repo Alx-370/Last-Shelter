@@ -1,4 +1,4 @@
-const SAVE_KEY = 'last_shelter_v7_colony_save';
+const SAVE_KEY = 'last_shelter_v8_power_vehicle_save';
 
 const timeSlots = ['Matin', 'Après-midi', 'Soir', 'Nuit'];
 
@@ -18,7 +18,8 @@ const icons = {
     medicine: '💊',
     ammo: '🔫',
     materials: '🔩',
-    fuel: '⛽'
+    fuel: '⛽',
+    power: '🔋'
 };
 
 const rarityWeights = {
@@ -38,7 +39,56 @@ const resourceLabels = {
     fuel: 'carburant'
 };
 
-const lootableResources = Object.keys(icons);
+const merchantBaseValues = {
+    food: 2,
+    water: 2,
+    bandage: 3,
+    medicine: 5,
+    ammo: 5,
+    materials: 4,
+    fuel: 6
+};
+
+const merchantProfiles = {
+    honest: {
+        id: 'honest',
+        name: 'Marchand honnête',
+        badge: 'Échange propre',
+        desc: 'Prix assez stables, peu de mauvaises surprises.',
+        buyFactor: 0.95,
+        sellFactor: 1.05,
+        marketBias: { food: 0.95, water: 0.95, bandage: 0.95, medicine: 1, ammo: 1, materials: 1, fuel: 1 }
+    },
+    opportunist: {
+        id: 'opportunist',
+        name: 'Marchand opportuniste',
+        badge: 'Prix mouvants',
+        desc: 'Il profite des pénuries et des périodes difficiles.',
+        buyFactor: 1.15,
+        sellFactor: 0.88,
+        marketBias: { food: 1.1, water: 1.1, bandage: 1, medicine: 1, ammo: 1, materials: 1, fuel: 1.15 }
+    },
+    arms: {
+        id: 'arms',
+        name: 'Trafiquant d’armes',
+        badge: 'Armé jusqu’aux dents',
+        desc: 'Spécialisé en munitions et carburant. Rien n’est gratuit avec lui.',
+        buyFactor: 1.18,
+        sellFactor: 0.92,
+        marketBias: { ammo: 0.75, fuel: 0.86, materials: 0.95, medicine: 1.2, food: 1.15, water: 1.15, bandage: 1.1 }
+    },
+    doctor: {
+        id: 'doctor',
+        name: 'Médecin itinérant',
+        badge: 'Soins de terrain',
+        desc: 'Cherche surtout des médicaments, de l’eau propre et des bandages.',
+        buyFactor: 1.04,
+        sellFactor: 0.96,
+        marketBias: { medicine: 0.74, bandage: 0.82, water: 0.92, ammo: 1.18, fuel: 1.12, materials: 1.08, food: 1 }
+    }
+};
+
+const lootableResources = ['food', 'water', 'bandage', 'medicine', 'ammo', 'materials', 'fuel'];
 
 const colonyFoundingCost = { materials: 12, food: 8, water: 8, ammo: 2, fuel: 5 };
 
@@ -215,7 +265,105 @@ const buildingDefs = [
     { id: 'rainCollector', name: 'Récupérateur d’eau', desc: 'Produit de l’eau pendant la pluie.', cost: { materials: 4 } },
     { id: 'garden', name: 'Petit potager', desc: 'Produit de la nourriture tous les quelques jours.', cost: { materials: 5, water: 1 } },
     { id: 'medicalCorner', name: 'Coin médical', desc: 'Rend les soins plus efficaces.', cost: { materials: 4, medicine: 1 } },
-    { id: 'bed', name: 'Lit amélioré', desc: 'Dormir récupère davantage d’énergie.', cost: { materials: 3, food: 1 } }
+    { id: 'bed', name: 'Lit amélioré', desc: 'Dormir récupère davantage d’énergie.', cost: { materials: 3, food: 1 } },
+    { id: 'generator', name: 'Générateur', desc: 'Produit un courant stable quel que soit le temps, consomme du carburant et augmente fortement le bruit.', cost: { materials: 12, fuel: 6 } },
+    { id: 'batteryBank', name: 'Batteries', desc: 'Stockent l’électricité pour la nuit et les périodes sans production.', cost: { materials: 10, fuel: 2 } },
+    { id: 'solarPanels', name: 'Panneaux solaires tardifs', desc: 'Rechargent les batteries en journée. Production meilleure par temps clair et plus faible sous la pluie.', cost: { materials: 16, fuel: 2 } },
+    { id: 'lighting', name: 'Éclairage', desc: 'Consomme de l’électricité mais améliore le moral et réduit les risques nocturnes dans l’abri.', cost: { materials: 6 } },
+    { id: 'radio', name: 'Radio', desc: 'Consomme de l’électricité. Sera encore plus utile plus tard, mais aide déjà à capter des signaux utiles.', cost: { materials: 5 } }
+];
+
+const vehicleDefs = [
+    {
+        id: 'bike',
+        rarity: 'common',
+        name: 'Vélo rafistolé',
+        desc: 'Silencieux, facile à remettre en état, mais très limité pour transporter du matériel.',
+        searchText: 'Un vélo rafistolé est caché derrière un grillage. Peu impressionnant, mais utile pour de petites sorties.',
+        noise: -2,
+        cargo: 2,
+        fuelUse: 0,
+        riskMod: -3,
+        bonusLoot: 1,
+        dangerousBonusLoot: 1,
+        upkeep: { materials: 1 },
+        repairCost: { materials: 3 }
+    },
+    {
+        id: 'scooter',
+        rarity: 'common',
+        name: 'Scooter usé',
+        desc: 'Pratique en ville, peu coûteux, mais dépend d’un peu de carburant et reste fragile.',
+        searchText: 'Tu repères un scooter usé dans une cour. Avec quelques pièces, il pourrait repartir.',
+        noise: 2,
+        cargo: 3,
+        fuelUse: 1,
+        riskMod: -1,
+        bonusLoot: 2,
+        dangerousBonusLoot: 2,
+        upkeep: { fuel: 1, materials: 1 },
+        repairCost: { materials: 4, fuel: 1 }
+    },
+    {
+        id: 'motorbike',
+        rarity: 'rare',
+        name: 'Moto de fuite',
+        desc: 'Rapide et nerveuse. Moins discrète qu’un vélo, mais très utile pour rentrer vivant.',
+        searchText: 'Une moto de fuite dort sous une bâche. Elle n’attend qu’un peu d’essence et de mécanique.',
+        noise: 4,
+        cargo: 4,
+        fuelUse: 1,
+        riskMod: -4,
+        bonusLoot: 2,
+        dangerousBonusLoot: 3,
+        upkeep: { fuel: 1, materials: 1 },
+        repairCost: { materials: 5, fuel: 2 }
+    },
+    {
+        id: 'compact',
+        rarity: 'rare',
+        name: 'Voiture compacte',
+        desc: 'Bonne option polyvalente. Transporte correctement sans attirer autant l’attention qu’un gros moteur.',
+        searchText: 'Une petite voiture encore entière est bloquée entre deux carcasses. Elle semble récupérable.',
+        noise: 5,
+        cargo: 6,
+        fuelUse: 2,
+        riskMod: -2,
+        bonusLoot: 3,
+        dangerousBonusLoot: 4,
+        upkeep: { fuel: 1, materials: 1 },
+        repairCost: { materials: 7, fuel: 3 }
+    },
+    {
+        id: 'pickup',
+        rarity: 'elite',
+        name: 'Pick-up fatigué',
+        desc: 'Idéal pour charger du lourd, mais son moteur usé consomme et attire l’attention.',
+        searchText: 'Tu tombes sur un pick-up fatigué. Gros potentiel, gros entretien.',
+        noise: 8,
+        cargo: 9,
+        fuelUse: 3,
+        riskMod: 1,
+        bonusLoot: 4,
+        dangerousBonusLoot: 6,
+        upkeep: { fuel: 2, materials: 2 },
+        repairCost: { materials: 10, fuel: 4 }
+    },
+    {
+        id: 'van',
+        rarity: 'legendary',
+        name: 'Fourgon de ravitaillement',
+        desc: 'Le rêve logistique du groupe : grosse charge utile, mais cher à remettre en route et bruyant.',
+        searchText: 'Un ancien fourgon de ravitaillement est encore là. C’est une trouvaille rare, mais coûteuse.',
+        noise: 10,
+        cargo: 12,
+        fuelUse: 4,
+        riskMod: 2,
+        bonusLoot: 5,
+        dangerousBonusLoot: 8,
+        upkeep: { fuel: 2, materials: 2 },
+        repairCost: { materials: 12, fuel: 5 }
+    }
 ];
 
 const simpleEvents = [
@@ -389,7 +537,28 @@ function initialState() {
             rainCollector: { built: false },
             garden: { built: false, lastHarvestDay: 1 },
             medicalCorner: { built: false },
-            bed: { built: false }
+            bed: { built: false },
+            generator: { built: false },
+            batteryBank: { built: false },
+            solarPanels: { built: false },
+            lighting: { built: false },
+            radio: { built: false }
+        },
+        power: {
+            stored: 0,
+            capacity: 0,
+            generatorOn: false,
+            lightingOn: false,
+            radioOn: false,
+            lastSource: 'Aucun'
+        },
+        vehicle: {
+            unlockDay: 15,
+            garage: [],
+            activeId: null,
+            pendingFound: null,
+            searchCooldown: 0,
+            lastSearchDay: null
         },
         colony: {
             founded: false,
@@ -413,6 +582,14 @@ function initialState() {
                 tower: 0
             },
             colonists: []
+        },
+        merchant: {
+            active: false,
+            nextVisitDay: randomInt(5, 7),
+            leaveDay: null,
+            market: {},
+            lastVisitDay: null,
+            profile: 'honest'
         },
         inventory: {
             food: 4,
@@ -457,18 +634,29 @@ const newGameBtn = $('newGameBtn');
 const resetSaveBtn = $('resetSaveBtn');
 const saveNowBtn = $('saveNowBtn');
 const stickyActions = $('stickyActions');
+const stickyActionsSpacer = $('stickyActionsSpacer');
 
 const buildingsToggle = $('buildingsToggle');
+const inventoryToggle = $('inventoryToggle');
+const statsToggle = $('statsToggle');
+const overviewToggle = $('overviewToggle');
 const simpleToggle = $('simpleToggle');
 const dangerousToggle = $('dangerousToggle');
 const journalToggle = $('journalToggle');
 const colonyToggle = $('colonyToggle');
+const merchantToggle = $('merchantToggle');
+const vehicleToggle = $('vehicleToggle');
 
 const buildingsContent = $('buildingsContent');
+const inventoryContent = $('inventoryContent');
+const statsContent = $('statsContent');
+const overviewContent = $('overviewContent');
 const simpleContent = $('simpleContent');
 const dangerousContent = $('dangerousContent');
 const journalContent = $('journalContent');
 const colonyContent = $('colonyContent');
+const merchantContent = $('merchantContent');
+const vehicleContent = $('vehicleContent');
 
 const moreActionsBtn = $('moreActionsBtn');
 const moreActionsPanel = $('moreActionsPanel');
@@ -480,6 +668,8 @@ const statsGrid = $('statsGrid');
 const statusChips = $('statusChips');
 const overviewGrid = $('overviewGrid');
 const inventoryList = $('inventoryList');
+const merchantPanel = $('merchantPanel');
+const merchantStatusLabel = $('merchantStatusLabel');
 const journalDays = $('journalDays');
 const dayLabel = $('dayLabel');
 const timeLabel = $('timeLabel');
@@ -493,6 +683,8 @@ const ambienceText = $('ambienceText');
 const colonyPanel = $('colonyPanel');
 const colonyHeadText = $('colonyHeadText');
 const colonyPhaseBadge = $('colonyPhaseBadge');
+const vehiclePanel = $('vehiclePanel');
+const vehicleHeadText = $('vehicleHeadText');
 const gameOverScreen = $('gameOverScreen');
 const gameOverReason = $('gameOverReason');
 const gameOverStats = $('gameOverStats');
@@ -523,14 +715,24 @@ backMenuBtn.addEventListener('click', () => {
     toggleGame(false);
 });
 moreActionsBtn.addEventListener('click', () => {
+    const willOpen = moreActionsPanel.classList.contains('hidden');
     moreActionsPanel.classList.toggle('hidden');
+    moreActionsBtn.setAttribute('aria-expanded', String(willOpen));
+    moreActionsBtn.textContent = willOpen ? '− Moins d’actions' : '＋ Plus d’actions';
+    syncStickySpacer();
 });
 
 buildingsToggle.addEventListener('click', () => toggleAccordion(buildingsToggle, buildingsContent));
+if (inventoryToggle && inventoryContent) inventoryToggle.addEventListener('click', () => toggleAccordion(inventoryToggle, inventoryContent));
+if (statsToggle && statsContent) statsToggle.addEventListener('click', () => toggleAccordion(statsToggle, statsContent));
+if (overviewToggle && overviewContent) overviewToggle.addEventListener('click', () => toggleAccordion(overviewToggle, overviewContent));
 simpleToggle.addEventListener('click', () => toggleAccordion(simpleToggle, simpleContent));
 dangerousToggle.addEventListener('click', () => toggleAccordion(dangerousToggle, dangerousContent));
 journalToggle.addEventListener('click', () => toggleAccordion(journalToggle, journalContent));
 if (colonyToggle && colonyContent) colonyToggle.addEventListener('click', () => toggleAccordion(colonyToggle, colonyContent));
+if (merchantToggle && merchantContent) merchantToggle.addEventListener('click', () => toggleAccordion(merchantToggle, merchantContent));
+if (vehicleToggle && vehicleContent) vehicleToggle.addEventListener('click', () => toggleAccordion(vehicleToggle, vehicleContent));
+window.addEventListener('resize', syncStickySpacer);
 
 function toggleAccordion(trigger, content) {
     const open = trigger.getAttribute('aria-expanded') === 'true';
@@ -550,24 +752,6 @@ function pick(arr) {
     return arr[randomInt(0, arr.length - 1)];
 }
 
-function getRarityWeight(rarity) {
-    return rarityWeights[rarity] || 1;
-}
-
-function pickWeightedByRarity(pool) {
-    if (!pool.length) return null;
-
-    const expanded = [];
-
-    pool.forEach(candidate => {
-        const weight = getRarityWeight(candidate.rarity);
-        for (let i = 0; i < weight; i++) {
-            expanded.push(candidate);
-        }
-    });
-
-    return pick(expanded);
-}
 
 function formatResourceAmount(resource, amount) {
     if (resource === 'ammo') return `${amount} munition${amount > 1 ? 's' : ''}`;
@@ -633,28 +817,287 @@ function createColonistFromTemplate(template, index = 0) {
 function normalizeState(raw) {
     const base = initialState();
     const next = { ...base, ...raw };
-    next.inventory = { ...base.inventory, ...(raw?.inventory || {}) };
-    next.stats = { ...base.stats, ...(raw?.stats || {}) };
-    next.statsSummary = { ...base.statsSummary, ...(raw?.statsSummary || {}) };
-    next.buildings = { ...base.buildings, ...(raw?.buildings || {}) };
-    next.colony = { ...base.colony, ...(raw?.colony || {}) };
-    next.colony.upgrades = { ...base.colony.upgrades, ...(raw?.colony?.upgrades || {}) };
-    next.colony.colonists = (raw?.colony?.colonists || []).map((c, i) => ({
-        id: c.id || `colon_restore_${i}`,
-        name: c.name || `Colon ${i + 1}`,
-        age: c.age || randomInt(24, 46),
-        rarity: c.rarity || 'common',
-        trait: c.trait || 'Survivant',
-        role: c.role || 'rest',
-        status: c.status || 'idle',
-        health: typeof c.health === 'number' ? c.health : randomInt(70, 92),
-        morale: typeof c.morale === 'number' ? c.morale : randomInt(55, 78),
-        fatigue: typeof c.fatigue === 'number' ? c.fatigue : randomInt(8, 28),
-        skills: { exploration: 4, defense: 4, medicine: 4, construction: 4, production: 4, ...(c.skills || {}) },
-        consumption: { food: 2, water: 1, medicine: 0, ...(c.consumption || {}) }
+
+    const rawInventory = raw?.inventory || {};
+    const rawStats = raw?.stats || {};
+    const rawStatsSummary = raw?.statsSummary || {};
+    const rawBuildings = raw?.buildings || {};
+    const rawMerchant = raw?.merchant || {};
+    const rawPower = raw?.power || {};
+    const rawVehicle = raw?.vehicle || {};
+    const rawColony = raw?.colony || {};
+    const rawColonyUpgrades = rawColony.upgrades || {};
+    const rawColonists = rawColony.colonists || [];
+
+    const legacyCurrent = rawVehicle['current'] || null;
+    const legacyFound = !!rawVehicle['found'];
+    const legacyType = rawVehicle['type'] || null;
+    const legacyStorageBonus = rawVehicle['storageBonus'] || 0;
+    const legacyFuelUse = rawVehicle['fuelUse'] || 0;
+    const legacyDurability = rawVehicle['durability'] || 40;
+    const legacyRepaired = !!rawVehicle['repaired'];
+
+    next.inventory = { ...base.inventory, ...rawInventory };
+    next.stats = { ...base.stats, ...rawStats };
+    next.statsSummary = { ...base.statsSummary, ...rawStatsSummary };
+    next.buildings = { ...base.buildings, ...rawBuildings };
+    next.merchant = { ...base.merchant, ...rawMerchant };
+    next.power = { ...base.power, ...rawPower };
+    next.vehicle = { ...base.vehicle, ...rawVehicle };
+
+    next.vehicle.garage = Array.isArray(rawVehicle.garage)
+        ? rawVehicle.garage.map((vehicle, index) => ({
+            ...vehicle,
+            uid: vehicle.uid || `veh_restore_${index}_${Date.now()}`,
+            condition: typeof vehicle.condition === 'number' ? vehicle.condition : randomInt(24, 58),
+            repaired: !!vehicle.repaired,
+            operational: !!vehicle.operational
+        }))
+        : [];
+
+    next.vehicle.pendingFound = rawVehicle.pendingFound
+        ? {
+            ...rawVehicle.pendingFound,
+            uid: rawVehicle.pendingFound.uid || `veh_pending_${Date.now()}`,
+            condition: typeof rawVehicle.pendingFound.condition === 'number'
+                ? rawVehicle.pendingFound.condition
+                : randomInt(24, 58),
+            repaired: !!rawVehicle.pendingFound.repaired,
+            operational: !!rawVehicle.pendingFound.operational
+        }
+        : null;
+
+    if (legacyCurrent && !next.vehicle.garage.length) {
+        next.vehicle.garage.push({
+            ...legacyCurrent,
+            uid: legacyCurrent.uid || `veh_legacy_${Date.now()}`,
+            condition: typeof legacyCurrent.condition === 'number'
+                ? legacyCurrent.condition
+                : randomInt(24, 58),
+            repaired: !!legacyCurrent.repaired,
+            operational: !!legacyCurrent.operational
+        });
+        next.vehicle.activeId = next.vehicle.garage[0].uid;
+    }
+
+    if (!next.vehicle.garage.length && legacyFound && legacyType) {
+        next.vehicle.garage.push({
+            id: 'legacy',
+            uid: `veh_legacy_${Date.now()}`,
+            rarity: 'rare',
+            name: legacyType,
+            desc: 'Véhicule issu d’une ancienne sauvegarde.',
+            searchText: '',
+            noise: 5,
+            cargo: legacyStorageBonus || 4,
+            fuelUse: legacyFuelUse || 2,
+            riskMod: 0,
+            bonusLoot: Math.max(1, Math.floor((legacyStorageBonus || 4) / 2)),
+            dangerousBonusLoot: Math.max(2, legacyStorageBonus || 4),
+            upkeep: { fuel: Math.max(0, legacyFuelUse || 2) },
+            repairCost: { materials: 8, fuel: 4 },
+            condition: legacyDurability,
+            repaired: legacyRepaired,
+            operational: legacyRepaired
+        });
+        next.vehicle.activeId = next.vehicle.garage[0].uid;
+    }
+
+    next.vehicle.searchCooldown =
+        typeof next.vehicle.searchCooldown === 'number' ? next.vehicle.searchCooldown : 0;
+
+    next.colony = { ...base.colony, ...rawColony };
+    next.colony.upgrades = { ...base.colony.upgrades, ...rawColonyUpgrades };
+    next.colony.colonists = rawColonists.map((colonist, index) => ({
+        id: colonist.id || `colon_restore_${index}`,
+        name: colonist.name || `Colon ${index + 1}`,
+        age: colonist.age || randomInt(24, 46),
+        rarity: colonist.rarity || 'common',
+        trait: colonist.trait || 'Survivant',
+        role: colonist.role || 'rest',
+        status: colonist.status || 'idle',
+        health: typeof colonist.health === 'number' ? colonist.health : randomInt(70, 92),
+        morale: typeof colonist.morale === 'number' ? colonist.morale : randomInt(55, 78),
+        fatigue: typeof colonist.fatigue === 'number' ? colonist.fatigue : randomInt(8, 28),
+        skills: {
+            exploration: 4,
+            defense: 4,
+            medicine: 4,
+            construction: 4,
+            production: 4,
+            ...(colonist.skills || {})
+        },
+        consumption: {
+            food: 2,
+            water: 1,
+            medicine: 0,
+            ...(colonist.consumption || {})
+        }
     }));
+
     updateColonyDerivedStats(next);
+
     return next;
+}
+
+
+function getMerchantProfile() {
+    return merchantProfiles[state.merchant.profile] || merchantProfiles.honest;
+}
+
+function generateMerchantProfile() {
+    const roll = Math.random();
+    if (roll < 0.28) return 'honest';
+    if (roll < 0.56) return 'opportunist';
+    if (roll < 0.78) return 'doctor';
+    return 'arms';
+}
+
+function generateMerchantMarket() {
+    const profile = merchantProfiles[state.merchant.profile] || merchantProfiles.honest;
+    return lootableResources.reduce((acc, resource) => {
+        const profileBias = profile.marketBias?.[resource] || 1;
+        acc[resource] = Number(((0.8 + Math.random() * 0.6) * profileBias).toFixed(2));
+        return acc;
+    }, {});
+}
+
+function getMerchantWeatherFactor(resource) {
+    if (state.weather === 'rain' && resource === 'water') return 0.9;
+    if (state.weather === 'cold' && resource === 'food') return 1.15;
+    if (state.weather === 'fog' && resource === 'ammo') return 1.1;
+    return 1;
+}
+
+function getMerchantBuyPrice(resource) {
+    const stock = state.inventory[resource] || 0;
+    const base = merchantBaseValues[resource] || 1;
+    const marketFactor = state.merchant.market?.[resource] || 1;
+    const profileFactor = getMerchantProfile().buyFactor || 1;
+    const scarcityFactor = stock <= 1 ? 1.35 : stock <= 3 ? 1.18 : stock >= 10 ? 0.88 : 1;
+    return Math.max(1, Math.round(base * marketFactor * scarcityFactor * profileFactor * getMerchantWeatherFactor(resource)));
+}
+
+function getMerchantSellPrice(resource) {
+    const stock = state.inventory[resource] || 0;
+    const base = merchantBaseValues[resource] || 1;
+    const marketFactor = state.merchant.market?.[resource] || 1;
+    const profileFactor = getMerchantProfile().sellFactor || 1;
+    const abundanceFactor = stock >= 10 ? 1.1 : stock >= 6 ? 1.04 : stock <= 1 ? 0.84 : 0.94;
+    return Math.max(1, Math.round(base * marketFactor * abundanceFactor * profileFactor));
+}
+
+function getMerchantTradeQuote(giveResource, receiveResource) {
+    if (!giveResource || !receiveResource || giveResource === receiveResource) return null;
+    const giveValue = getMerchantSellPrice(giveResource);
+    const receiveValue = getMerchantBuyPrice(receiveResource);
+    const cost = Math.max(1, Math.ceil(receiveValue / giveValue));
+    return { cost, receiveAmount: 1 };
+}
+
+function getMerchantMoodLabel(resource) {
+    const factor = state.merchant.market?.[resource] || 1;
+    if (factor >= 1.25) return 'Très recherché';
+    if (factor >= 1.08) return 'Demandé';
+    if (factor <= 0.88) return 'Offre abondante';
+    return 'Stable';
+}
+
+function updateMerchantForNewDay() {
+    if (state.merchant.active && state.merchant.leaveDay !== null && state.day > state.merchant.leaveDay) {
+        state.merchant.active = false;
+        state.merchant.market = {};
+        state.merchant.lastVisitDay = state.day - 1;
+        state.merchant.leaveDay = null;
+        state.merchant.nextVisitDay = state.day + randomInt(5, 7);
+        addLog('Marchand parti', 'Le marchand itinérant a quitté la zone avant l’aube.', 'Commerce');
+    }
+
+    if (!state.merchant.active && state.day >= state.merchant.nextVisitDay) {
+        state.merchant.active = true;
+        state.merchant.leaveDay = state.day;
+        state.merchant.profile = generateMerchantProfile();
+        state.merchant.market = generateMerchantMarket();
+        state.merchant.lastVisitDay = state.day;
+        addLog('Marchand en vue', `${getMerchantProfile().name} s’installe près de l’abri pour la journée.`, 'Commerce');
+        toast('Marchand', 'Un marchand est disponible aujourd’hui.', 'info');
+    }
+}
+
+function makeMerchantTrade(giveResource, receiveResource) {
+    const quote = getMerchantTradeQuote(giveResource, receiveResource);
+
+    if (!state.merchant.active) {
+        toast('Commerce indisponible', 'Aucun marchand n’est disponible pour le moment.', 'warning');
+        return;
+    }
+
+    if (!quote) {
+        toast('Échange invalide', 'Choisis deux ressources différentes.', 'warning');
+        return;
+    }
+
+    if ((state.inventory[giveResource] || 0) < quote.cost) {
+        toast('Ressources insuffisantes', `Il faut ${quote.cost} ${resourceLabels[giveResource]} pour cet échange.`, 'warning');
+        return;
+    }
+
+    state.inventory[giveResource] -= quote.cost;
+    state.inventory[receiveResource] = (state.inventory[receiveResource] || 0) + quote.receiveAmount;
+
+    addLog(
+        'Échange marchand',
+        `Tu échanges ${quote.cost} ${resourceLabels[giveResource]} contre ${quote.receiveAmount} ${resourceLabels[receiveResource]}.`,
+        'Commerce'
+    );
+
+    toast(
+        'Échange validé',
+        `-${quote.cost} ${resourceLabels[giveResource]} • +${quote.receiveAmount} ${resourceLabels[receiveResource]}.`,
+        'success'
+    );
+
+    save();
+    render();
+}
+
+function getActionMeta(action) {
+    const map = {
+        sleep: { icon: '🌙', title: 'Dormir', desc: 'Passe le temps. Remonte surtout l’énergie et baisse le stress.', cost: 'Temps', risk: 'Faible' },
+        eat: { icon: '🍖', title: 'Manger', desc: 'Consomme 1 nourriture. Remonte la faim.', cost: '1 nourriture', risk: 'Aucun' },
+        drink: { icon: '💧', title: 'Boire', desc: 'Consomme 1 eau. Remonte la soif.', cost: '1 eau', risk: 'Aucun' },
+        heal: { icon: '🩹', title: 'Soigner', desc: 'Consomme 1 bandage. Remonte la santé et baisse l’infection.', cost: '1 bandage', risk: 'Aucun' },
+        relax: { icon: '🫁', title: 'Se détendre', desc: 'Passe le temps. Réduit fortement le stress et remonte le moral.', cost: 'Temps', risk: 'Faible' },
+        fortify: { icon: '🧱', title: 'Renforcer', desc: 'Améliore la protection de l’abri mais fatigue.', cost: '2 matériaux + temps', risk: 'Faible' },
+        'night-watch': { icon: '👁️', title: 'Garde', desc: 'Réduit le risque nocturne, mais augmente la fatigue et le stress.', cost: 'Temps + énergie', risk: 'Moyen' },
+        patrol: { icon: '🚶', title: 'Patrouiller', desc: 'Réduit le danger extérieur, mais consomme de l’énergie.', cost: 'Temps + énergie', risk: 'Moyen' },
+        'secure-zone': { icon: '🛡️', title: 'Sécuriser', desc: 'Réduit le danger et améliore l’abri.', cost: '3 matériaux + temps', risk: 'Faible' },
+        'clear-threat': { icon: '🔫', title: 'Éliminer', desc: 'Réduit fortement le danger, mais fait du bruit et consomme des munitions.', cost: '2 munitions + temps', risk: 'Élevé' },
+        next: { icon: '⏱️', title: 'Passer le temps', desc: 'Laisse filer quelques heures sans autre effet direct.', cost: 'Temps', risk: 'Variable' }
+    };
+    return map[action] || { icon: '•', title: action, desc: '', cost: '', risk: '' };
+}
+
+function renderActionLabels() {
+    document.querySelectorAll('[data-action]').forEach(btn => {
+        const action = btn.dataset.action;
+        const meta = getActionMeta(action);
+        const riskClass = meta.risk === 'Élevé' ? 'danger' : meta.risk === 'Moyen' ? 'warning' : 'safe';
+        btn.innerHTML = `
+            <div class="action-pill-main">
+                <span class="action-emoji">${meta.icon}</span>
+                <div class="action-copy">
+                    <strong>${meta.title}</strong>
+                    <small>${meta.desc}</small>
+                </div>
+            </div>
+            <div class="action-meta-row">
+                <span class="action-mini-tag">Coût : ${meta.cost}</span>
+                <span class="action-mini-tag ${riskClass}">Risque : ${meta.risk}</span>
+            </div>
+        `;
+        btn.title = `${meta.title} — ${meta.desc} Coût : ${meta.cost}. Risque : ${meta.risk}.`;
+    });
 }
 
 function toggleGame(show) {
@@ -699,6 +1142,7 @@ function toast(title, message, type = 'info', duration = 2600) {
 function getWeatherLabel(id) {
     return weatherDefs.find(x => x.id === id)?.label || '☀️ Temps clair';
 }
+
 
 function rollWeather() {
     state.weather = pick(weatherDefs).id;
@@ -1188,6 +1632,7 @@ function processColonyDay() {
 
 function startNewGame() {
     state = normalizeState(initialState());
+    updateMerchantForNewDay();
     addLog('Début de survie', 'Tu sécurises l’abri tant bien que mal. Les réserves sont limitées, le danger monte dehors, et les prochaines heures vont décider si tu peux vraiment tenir.', 'Prologue');
     toggleGame(true);
     save();
@@ -1202,6 +1647,7 @@ function continueGame() {
         return;
     }
     state = normalizeState(saved);
+    updateMerchantForNewDay();
     toggleGame(true);
     render();
     toast('Continuer', 'Sauvegarde chargée.', 'info');
@@ -1223,12 +1669,271 @@ function payCost(cost) {
     return true;
 }
 
+function updatePowerState() {
+    const p = state.power;
+    p.capacity = state.buildings.batteryBank.built ? 12 : 0;
+    if (!state.buildings.batteryBank.built) p.stored = 0;
+    p.generatorOn = !!state.buildings.generator.built && (state.inventory.fuel || 0) > 0;
+    p.lightingOn = !!state.buildings.lighting.built;
+    p.radioOn = !!state.buildings.radio.built;
+
+    let generated = 0;
+    let consumption = 0;
+    let source = 'Aucun';
+    const isDaytime = state.timeIndex <= 1;
+
+    if (state.buildings.generator.built && state.inventory.fuel > 0) {
+        state.inventory.fuel -= 1;
+        generated += 4;
+        state.noise = clamp(state.noise + 8);
+        source = 'Générateur';
+    }
+
+    if (state.buildings.solarPanels.built && isDaytime) {
+        const solarGain = state.weather === 'clear' ? 4 : state.weather === 'rain' ? 1 : state.weather === 'fog' ? 2 : 3;
+        generated += solarGain;
+        source = source === 'Aucun' ? 'Panneaux solaires' : `${source} + solaire`;
+    }
+
+    if (state.buildings.lighting.built) consumption += 1;
+    if (state.buildings.radio.built) consumption += 1;
+
+    if (p.capacity > 0) {
+        p.stored = Math.min(p.capacity, p.stored + generated);
+        if (consumption > 0) {
+            const used = Math.min(consumption, p.stored);
+            p.stored -= used;
+            consumption -= used;
+        }
+    } else {
+        consumption = Math.max(0, consumption - generated);
+    }
+
+    if (state.buildings.lighting.built && (generated > 0 || p.stored > 0 || consumption === 0)) {
+        state.stats.morale = clamp(state.stats.morale + 1);
+        state.danger = clamp(state.danger - 1);
+    }
+
+    if (state.buildings.radio.built) {
+        state.stats.stress = clamp(state.stats.stress - 1);
+        if (!state.merchant.active && state.merchant.nextVisitDay - state.day > 2) state.merchant.nextVisitDay -= 1;
+    }
+
+    if (consumption > 0) {
+        state.stats.morale = clamp(state.stats.morale - 1);
+        source = source === 'Aucun' ? 'Panne' : `${source} insuffisant`;
+    }
+
+    p.lastSource = source;
+}
+
+
+function pickWeightedByRarity(items) {
+    if (!items.length) return null;
+
+    const expanded = items.flatMap(item => {
+        const weight = rarityWeights[item.rarity] || 1;
+        return Array.from({ length: weight }, () => item);
+    });
+
+    return pick(expanded);
+}
+
+function getGarageVehicleByUid(uid) {
+    return (state.vehicle.garage || []).find(vehicle => vehicle.uid === uid) || null;
+}
+
+function getActiveVehicle() {
+    if (!state.vehicle.activeId) return null;
+    return getGarageVehicleByUid(state.vehicle.activeId);
+}
+
+function createVehicleInstance(def) {
+    return {
+        ...def,
+        uid: `veh_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        condition: randomInt(28, 64),
+        repaired: false,
+        operational: false
+    };
+}
+
+function canSearchVehicle() {
+    return state.day >= state.vehicle.unlockDay && !state.vehicle.pendingFound && state.vehicle.searchCooldown <= 0;
+}
+
+function searchVehicle() {
+    if (state.day < state.vehicle.unlockDay) {
+        toast('Garage fermé', `La recherche de véhicule se débloque au jour ${state.vehicle.unlockDay}.`, 'warning');
+        return;
+    }
+    if (state.vehicle.pendingFound) {
+        toast('Décision en attente', 'Choisis d’abord quoi faire du véhicule que tu viens de trouver.', 'info');
+        return;
+    }
+    if (state.vehicle.searchCooldown > 0) {
+        toast('Recherche impossible', `Il faut attendre encore ${state.vehicle.searchCooldown} jour(s).`, 'warning');
+        return;
+    }
+    if (state.stats.energy < 14) {
+        toast('Trop fatigué', 'Tu es trop fatigué pour fouiller toute une zone à la recherche d’un véhicule.', 'warning');
+        return;
+    }
+
+    state.location = 'Périphérie';
+    state.stats.energy = clamp(state.stats.energy - randomInt(9, 13));
+    state.stats.thirst = clamp(state.stats.thirst - randomInt(5, 8));
+    state.stats.hunger = clamp(state.stats.hunger - randomInt(4, 7));
+    state.stats.stress = clamp(state.stats.stress + randomInt(3, 6));
+    state.noise = clamp(state.noise + randomInt(2, 6));
+    state.danger = clamp(state.danger + randomInt(3, 8));
+    state.vehicle.lastSearchDay = state.day;
+
+    const found = Math.random() < 0.65;
+    if (!found) {
+        state.vehicle.searchCooldown = 2;
+        addLog('Recherche de véhicule', 'Tu fouilles des rues désertes sans trouver de machine récupérable.', 'Garage');
+        toast('Aucun véhicule', 'Rien d’exploitable cette fois. Nouvelle tentative dans 2 jours.', 'warning');
+        advanceTime();
+        save();
+        render();
+        return;
+    }
+
+    const picked = pickWeightedByRarity(vehicleDefs);
+    state.vehicle.pendingFound = createVehicleInstance(picked);
+    state.vehicle.searchCooldown = 1;
+    addLog('Véhicule repéré', `${picked.searchText} Tu dois maintenant décider quoi en faire.`, 'Garage');
+    toast('Véhicule trouvé', picked.name, 'success');
+    advanceTime();
+    save();
+    render();
+}
+
+function acceptPendingVehicle() {
+    const pending = state.vehicle.pendingFound;
+    if (!pending) return;
+    state.vehicle.garage.push({ ...pending });
+    if (!state.vehicle.activeId) state.vehicle.activeId = pending.uid;
+    state.vehicle.pendingFound = null;
+    addLog('Garage', `${pending.name} entre dans le garage improvisé.`, 'Garage');
+    toast('Garage', `${pending.name} conservé.`, 'success');
+    save();
+    render();
+}
+
+function getScrapYield(vehicle) {
+    const yieldMap = {
+        bike: { materials: 2 },
+        scooter: { materials: 2, fuel: 1 },
+        motorbike: { materials: 3, fuel: 1 },
+        compact: { materials: 4, fuel: 1 },
+        pickup: { materials: 5, fuel: 2 },
+        van: { materials: 6, fuel: 2 }
+    };
+    return yieldMap[vehicle.id] || { materials: 2 };
+}
+
+function scrapPendingVehicle() {
+    const pending = state.vehicle.pendingFound;
+    if (!pending) return;
+    const loot = getScrapYield(pending);
+    Object.entries(loot).forEach(([k, v]) => {
+        state.inventory[k] = (state.inventory[k] || 0) + v;
+    });
+    state.vehicle.pendingFound = null;
+    addLog('Démontage', `${pending.name} est démonté pour récupérer ${Object.entries(loot).map(([k,v]) => `${v} ${resourceLabels[k] || k}`).join(', ')}.`, 'Garage');
+    toast('Démontage', 'Tu récupères quelques pièces utiles.', 'info');
+    save();
+    render();
+}
+
+function refusePendingVehicle() {
+    const pending = state.vehicle.pendingFound;
+    if (!pending) return;
+    state.vehicle.pendingFound = null;
+    addLog('Occasion laissée', `${pending.name} est abandonné sur place.`, 'Garage');
+    toast('Véhicule refusé', 'Tu pourras chercher autre chose plus tard.', 'info');
+    save();
+    render();
+}
+
+function repairGarageVehicle(uid) {
+    const current = getGarageVehicleByUid(uid);
+    if (!current || current.repaired) return;
+    if (!payCost(current.repairCost)) {
+        toast('Réparation impossible', 'Ressources insuffisantes pour remettre ce véhicule en état.', 'warning');
+        return;
+    }
+    current.repaired = true;
+    current.operational = true;
+    current.condition = clamp(current.condition + randomInt(22, 35));
+    addLog('Réparation véhicule', `${current.name} est maintenant opérationnel.`, 'Garage');
+    toast('Garage', `${current.name} prêt pour les sorties.`, 'success');
+    save();
+    render();
+}
+
+function equipVehicle(uid) {
+    const vehicle = getGarageVehicleByUid(uid);
+    if (!vehicle) return;
+    state.vehicle.activeId = uid;
+    toast('Véhicule actif', `${vehicle.name} sera utilisé pour les sorties.`, 'info');
+    save();
+    render();
+}
+
+function removeVehicleFromGarage(uid) {
+    const vehicle = getGarageVehicleByUid(uid);
+    if (!vehicle) return;
+    state.vehicle.garage = state.vehicle.garage.filter(v => v.uid !== uid);
+    if (state.vehicle.activeId === uid) state.vehicle.activeId = state.vehicle.garage[0]?.uid || null;
+    addLog('Garage', `${vehicle.name} est retiré du garage.`, 'Garage');
+    toast('Garage', `${vehicle.name} retiré.`, 'warning');
+    save();
+    render();
+}
+
+function getVehicleExplorationBonus(mode) {
+    const current = getActiveVehicle();
+    if (!current || !current.operational) return { extraLoot: 0, riskMod: 0, noise: 0, fuelUse: 0, vehicleName: null };
+    for (const [resource, amount] of Object.entries(current.upkeep || {})) {
+        if ((state.inventory[resource] || 0) < amount) {
+            return { extraLoot: 0, riskMod: 0, noise: 0, fuelUse: 0, vehicleName: null };
+        }
+    }
+    for (const [resource, amount] of Object.entries(current.upkeep || {})) {
+        state.inventory[resource] -= amount;
+    }
+    return {
+        extraLoot: mode === 'dangerous' ? current.dangerousBonusLoot : current.bonusLoot,
+        riskMod: current.riskMod,
+        noise: current.noise,
+        fuelUse: current.fuelUse,
+        vehicleName: current.name
+    };
+}
+
 function buildStructure(id) {
+
     const def = buildingDefs.find(b => b.id === id);
     if (!def) return;
 
     if (state.buildings[id].built) {
         toast('Déjà construit', 'Cette amélioration est déjà en place.', 'info');
+        return;
+    }
+
+    if (id === 'solarPanels' && state.day < 12) {
+        toast('Trop tôt', 'Les panneaux solaires se débloquent plutôt vers le jour 12.', 'warning');
+        return;
+    }
+    if ((id === 'lighting' || id === 'radio') && !state.buildings.generator.built && !state.buildings.solarPanels.built) {
+        toast('Pas de courant', 'Il faut une source de production électrique avant d’installer cet équipement.', 'warning');
+        return;
+    }
+    if (id === 'batteryBank' && !state.buildings.generator.built && !state.buildings.solarPanels.built) {
+        toast('Inutile pour le moment', 'Installe d’abord une vraie source d’électricité.', 'warning');
         return;
     }
 
@@ -1287,9 +1992,12 @@ function advanceTime() {
         state.timeIndex = 0;
         state.day += 1;
         state.location = 'Abri';
+        if (state.vehicle.searchCooldown > 0) state.vehicle.searchCooldown -= 1;
         rollWeather();
+        updateMerchantForNewDay();
         applyPassiveProduction();
         processColonyDay();
+        updatePowerState();
         nightEvent();
     }
 
@@ -1522,14 +2230,21 @@ function handleAction(action) {
     render();
 }
 
+
 function runExploration(loc, mode) {
     state.location = loc.name;
     state.statsSummary.explorations += 1;
 
+    const vehicleBonus = getVehicleExplorationBonus(mode);
     const rewards = {};
     Object.entries(loc.rewards).forEach(([k, [min, max]]) => {
         rewards[k] = randomInt(min, max);
     });
+
+    if (vehicleBonus.extraLoot > 0) {
+        const bonusResource = pick(Object.keys(loc.rewards));
+        rewards[bonusResource] = (rewards[bonusResource] || 0) + vehicleBonus.extraLoot;
+    }
 
     Object.entries(rewards).forEach(([k, v]) => {
         state.inventory[k] = (state.inventory[k] || 0) + v;
@@ -1543,12 +2258,12 @@ function runExploration(loc, mode) {
     state.stats.thirst = clamp(state.stats.thirst - randomInt(mode === 'dangerous' ? 10 : 8, mode === 'dangerous' ? 16 : 12));
     state.stats.hunger = clamp(state.stats.hunger - randomInt(mode === 'dangerous' ? 8 : 5, mode === 'dangerous' ? 12 : 8));
     state.stats.stress = clamp(state.stats.stress + stressGain);
-    state.noise = clamp(state.noise + randomInt(mode === 'dangerous' ? 10 : 6, mode === 'dangerous' ? 18 : 14));
-    state.danger = clamp(state.danger + randomInt(mode === 'dangerous' ? 8 : 4, mode === 'dangerous' ? 14 : 10));
+    state.noise = clamp(state.noise + randomInt(mode === 'dangerous' ? 10 : 6, mode === 'dangerous' ? 18 : 14) + vehicleBonus.noise);
+    state.danger = clamp(state.danger + randomInt(mode === 'dangerous' ? 8 : 4, mode === 'dangerous' ? 14 : 10) + vehicleBonus.riskMod);
 
     addLog(
         mode === 'dangerous' ? 'Expédition dangereuse' : 'Exploration',
-        `Tu fouilles ${loc.name} et récupères ${formatRewardText(rewards)}. Énergie -${energyCost}, stress +${stressGain}.`,
+        `Tu fouilles ${loc.name} et récupères ${formatRewardText(rewards)}. Énergie -${energyCost}, stress +${stressGain}.${vehicleBonus.vehicleName ? ` ${vehicleBonus.vehicleName} apporte un bonus logistique.` : ''}`,
         mode === 'dangerous' ? 'Expédition' : 'Exploration'
     );
 
@@ -1720,36 +2435,48 @@ function getAmbienceText() {
 
 function renderSticky() {
     stickyVitals.innerHTML = [
-        ['❤️', 'Santé', state.stats.health],
-        ['🍖', 'Faim', state.stats.hunger],
-        ['💧', 'Soif', state.stats.thirst],
-        ['⚡', 'Énergie', state.stats.energy]
+        ['❤️', 'Santé', `${state.stats.health}%`],
+        ['🍖', 'Faim', `${state.stats.hunger}%`],
+        ['💧', 'Soif', `${state.stats.thirst}%`],
+        ['⚡', 'Énergie', `${state.stats.energy}%`],
+        ['🙂', 'Moral', `${state.stats.morale}%`],
+        ['🧠', 'Stress', `${state.stats.stress}%`]
     ].map(([i, l, v]) => `
     <div class="sticky-pill">
       <span class="icon">${i}</span>
-      <div>
-        <strong>${v}%</strong>
-        <span>${l}</span>
-      </div>
-    </div>
-  `).join('');
-
-    stickyResources.innerHTML = [
-        ['food', 'Nourriture', state.inventory.food],
-        ['water', 'Eau', state.inventory.water],
-        ['materials', 'Matériaux', state.inventory.materials],
-        ['bandage', 'Bandages', state.inventory.bandage],
-        ['ammo', 'Munitions', state.inventory.ammo],
-        ['fuel', 'Carburant', state.inventory.fuel]
-    ].map(([k, l, v]) => `
-    <div class="sticky-pill">
-      <span class="icon">${icons[k]}</span>
       <div>
         <strong>${v}</strong>
         <span>${l}</span>
       </div>
     </div>
   `).join('');
+
+    stickyResources.innerHTML = [
+        ['clock', `Jour ${state.day}`, timeSlots[state.timeIndex]],
+        ['weather', 'Météo', getWeatherLabel(state.weather)],
+        ['food', 'Nourriture', state.inventory.food],
+        ['water', 'Eau', state.inventory.water],
+        ['materials', 'Matériaux', state.inventory.materials],
+        ['bandage', 'Bandages', state.inventory.bandage],
+        ['ammo', 'Munitions', state.inventory.ammo],
+        ['fuel', 'Carburant', state.inventory.fuel]
+    ].map(([k, l, v]) => {
+        const icon = k === 'clock' ? '🕒' : (k === 'weather' ? '' : icons[k]);
+        const compactClass = k === 'weather' ? ' sticky-pill--weather' : '';
+        const iconHtml = icon ? `<span class="icon">${icon}</span>` : '';
+        const valueHtml = k === 'weather'
+            ? `<span class="sticky-weather-value">${v}</span>`
+            : `<strong>${v}</strong>`;
+        return `
+    <div class="sticky-pill${compactClass}">
+      ${iconHtml}
+      <div>
+        <strong>${l}</strong>
+        ${valueHtml}
+      </div>
+    </div>
+  `;
+    }).join('');
 
     statusSummary.textContent = getStatusSummary();
 }
@@ -1795,7 +2522,9 @@ function renderOverview() {
         { label: 'Protection abri', value: `${state.shelter}%` },
         { label: 'Niveau de bruit', value: `${state.noise}%` },
         { label: 'Danger extérieur', value: `${state.danger}%` },
-        { label: 'Lieu actuel', value: state.location }
+        { label: 'Lieu actuel', value: state.location },
+        { label: 'Électricité stockée', value: `${state.power.stored}/${state.power.capacity || 0}` },
+        { label: 'Source active', value: state.power.lastSource }
     ];
 
     if (state.colony.founded) {
@@ -1814,31 +2543,34 @@ function renderOverview() {
 }
 
 function renderBuildings() {
-    buildingsGrid.innerHTML = buildingDefs.map(def => {
-        const built = state.buildings[def.id].built;
+    const powerSummary = `
+      <article class="building-card building-card--power">
+        <div class="building-top">
+          <strong>Réseau électrique</strong>
+          <span class="badge loot">${state.power.stored}/${state.power.capacity || 0} charge</span>
+        </div>
+        <p class="modal-text">Source : ${state.power.lastSource}. Le générateur apporte un courant stable mais consomme du carburant et fait du bruit. Les batteries stockent l’énergie pour la nuit. Les panneaux solaires donnent surtout en journée.</p>
+      </article>
+    `;
 
-        const costTextLocal = Object.entries(def.cost).map(([k, v]) =>
-            `${icons[k] || ''} ${v} ${
-                k === 'materials' ? 'matériaux' :
-                    k === 'food' ? 'nourriture' :
-                        k === 'water' ? 'eau' :
-                            k === 'medicine' ? 'médicaments' : k
-            }`
-        ).join(', ');
+    buildingsGrid.innerHTML = powerSummary + buildingDefs.map(def => {
+        const built = state.buildings[def.id].built;
+        const locked = def.id === 'solarPanels' && state.day < 12;
+        const costTextLocal = Object.entries(def.cost).map(([k, v]) => `${icons[k] || ''} ${v} ${resourceLabels[k] || k}`).join(', ');
 
         return `
       <article class="building-card">
         <div class="building-top">
           <strong>${def.name}</strong>
-          <span class="badge ${built ? 'good' : 'loot'}">${built ? 'Construit' : 'À construire'}</span>
+          <span class="badge ${built ? 'good' : locked ? 'danger' : 'loot'}">${built ? 'Construit' : locked ? 'Jour 12' : 'À construire'}</span>
         </div>
         <p class="modal-text">${def.desc}</p>
         <div class="location-meta">
           <span class="badge">${costTextLocal}</span>
         </div>
-        <button class="btn ${built ? '' : 'primary'} build-btn" data-building="${def.id}" ${built ? 'disabled' : ''}>
-          <strong>${built ? 'Déjà installé' : 'Construire'}</strong>
-          <span>${built ? 'Amélioration active dans l’abri' : 'Lancer la construction'}</span>
+        <button class="btn ${built || locked ? '' : 'primary'} build-btn" data-building="${def.id}" ${(built || locked) ? 'disabled' : ''}>
+          <strong>${built ? 'Déjà installé' : locked ? 'Encore verrouillé' : 'Construire'}</strong>
+          <span>${built ? 'Amélioration active dans l’abri' : locked ? 'Disponible plus tard' : 'Lancer la construction'}</span>
         </button>
       </article>
     `;
@@ -1930,6 +2662,114 @@ function renderInventory() {
     }).join('');
 }
 
+
+function renderMerchant() {
+    if (!merchantPanel || !merchantStatusLabel) return;
+    if (merchantToggle) {
+        merchantToggle.classList.toggle('accordion-highlight', !!state.merchant.active);
+        merchantToggle.classList.toggle('accordion-pulse', !!state.merchant.active);
+    }
+
+    if (!state.merchant.active) {
+        merchantStatusLabel.textContent = `Prochain passage estimé : jour ${state.merchant.nextVisitDay}`;
+        merchantPanel.innerHTML = `
+            <div class="merchant-card merchant-card--idle">
+                <div class="merchant-hero">
+                    <div>
+                        <strong>Aucun marchand dans le secteur</strong>
+                        <p>Les fréquences radio restent calmes. Le prochain passage est estimé autour du jour ${state.merchant.nextVisitDay}.</p>
+                    </div>
+                    <span class="merchant-badge">Hors zone</span>
+                </div>
+                <div class="merchant-note-grid">
+                    <article class="merchant-note"><strong>Fréquence</strong><span>1 visite tous les 5 à 7 jours</span></article>
+                    <article class="merchant-note"><strong>Prix</strong><span>Variables selon le marché et ton stock</span></article>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const profile = getMerchantProfile();
+    merchantStatusLabel.textContent = `${profile.name} • Départ prévu après la nuit`;
+    const giveOptions = lootableResources.map(resource => `<option value="${resource}">${icons[resource]} ${resourceLabels[resource]} (${state.inventory[resource] || 0})</option>`).join('');
+    const receiveOptions = lootableResources.map(resource => `<option value="${resource}">${icons[resource]} ${resourceLabels[resource]} • ${getMerchantMoodLabel(resource)}</option>`).join('');
+    const trendCards = lootableResources.map(resource => `
+        <article class="merchant-trend-row merchant-trend-row--compact merchant-trend-card">
+            <div class="merchant-resource-main">
+                <strong>${icons[resource]} ${resourceLabels[resource]}</strong>
+                <small>Pour 1 unité</small>
+            </div>
+            <span class="merchant-trend-state">${getMerchantMoodLabel(resource)}</span>
+            <div class="merchant-prices merchant-prices--compact">
+                <span title="Coût pour obtenir 1 ${resourceLabels[resource]}">Acheter ${getMerchantBuyPrice(resource)}</span>
+                <span title="Valeur obtenue si tu revends 1 ${resourceLabels[resource]}">Revendre ${getMerchantSellPrice(resource)}</span>
+            </div>
+        </article>
+    `).join('');
+
+    merchantPanel.innerHTML = `
+        <div class="merchant-card merchant-card--live">
+            <div class="merchant-hero">
+                <div>
+                    <strong>${profile.name}</strong>
+                    <p>${profile.desc} Lecture simple : acheter = coût pour recevoir 1 unité. Revendre = valeur d’1 unité que tu lui donnes.</p>
+                </div>
+                <span class="merchant-badge live">${profile.badge || 'En place'}</span>
+            </div>
+
+            <div class="merchant-legend">
+                <span><strong>Acheter</strong> = ce que tu dois donner pour obtenir 1 ressource</span>
+                <span><strong>Revendre</strong> = valeur de 1 ressource si tu l’échanges</span>
+            </div>
+
+            <div class="merchant-quote"><strong>Cours du jour</strong><span>Chaque ligne indique le prix pour obtenir 1 unité et la valeur de revente d’1 unité de ton stock.</span></div><div class="merchant-trend-grid merchant-trend-grid--cards">${trendCards}</div>
+
+            <div class="merchant-exchange-box">
+                <div class="merchant-select-grid">
+                    <label>
+                        <span>Tu donnes</span>
+                        <select id="merchantGiveSelect">${giveOptions}</select>
+                    </label>
+                    <label>
+                        <span>Tu veux</span>
+                        <select id="merchantReceiveSelect">${receiveOptions}</select>
+                    </label>
+                </div>
+                <div class="merchant-quote" id="merchantQuote"></div>
+                <button class="btn primary merchant-trade-btn" id="merchantTradeBtn">
+                    <strong>Faire le troc</strong>
+                    <span>Échange immédiat</span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    const giveSelect = $('merchantGiveSelect');
+    const receiveSelect = $('merchantReceiveSelect');
+    const quoteBox = $('merchantQuote');
+    const tradeBtn = $('merchantTradeBtn');
+
+    const updateQuote = () => {
+        if (!giveSelect || !receiveSelect || !quoteBox) return;
+        const give = giveSelect.value;
+        let receive = receiveSelect.value;
+        if (give === receive) {
+            receive = lootableResources.find(r => r !== give) || give;
+            receiveSelect.value = receive;
+        }
+        const quote = getMerchantTradeQuote(give, receive);
+        quoteBox.innerHTML = quote
+            ? `<strong>Troc actuel</strong><span>Donner ${quote.cost} ${icons[give]} ${resourceLabels[give]} pour recevoir ${quote.receiveAmount} ${icons[receive]} ${resourceLabels[receive]}.</span>`
+            : `<strong>Troc actuel</strong><span>Choisis deux ressources différentes.</span>`;
+    };
+
+    giveSelect?.addEventListener('change', updateQuote);
+    receiveSelect?.addEventListener('change', updateQuote);
+    tradeBtn?.addEventListener('click', () => makeMerchantTrade(giveSelect.value, receiveSelect.value));
+    updateQuote();
+}
+
 function renderColony() {
     if (!colonyPanel) return;
 
@@ -1971,20 +2811,27 @@ function renderColony() {
         const next = def.levels[level];
         const maxed = !next;
         return `
-          <article class="colony-upgrade-card ${getRoleClass(def.role)}">
-            <div class="colony-upgrade-top">
-              <div>
+          <article class="colony-upgrade-card ${getRoleClass(def.role)} accordion-card">
+            <button class="accordion-trigger accordion-trigger--inner" aria-expanded="false">
+              <span>
                 <strong>${def.name}</strong>
                 <small>${def.desc}</small>
+              </span>
+              <span class="accordion-trigger-right">
+                <span class="badge ${maxed ? 'good' : 'loot'}">Niv. ${level}${maxed ? ' • Max' : ''}</span>
+                <span class="accordion-icon">+</span>
+              </span>
+            </button>
+            <div class="accordion-content hidden">
+              <div class="accordion-card-body">
+                <div class="colony-upgrade-bottom">
+                  <div class="colony-upgrade-bonus">${maxed ? 'Amélioration maximale' : next.bonus}</div>
+                  <button class="btn ${maxed ? '' : 'primary'} colony-upgrade-btn" data-upgrade="${def.id}" ${maxed ? 'disabled' : ''}>
+                    <strong>${maxed ? 'Max atteint' : 'Améliorer'}</strong>
+                    <span>${maxed ? 'Aucun niveau supplémentaire' : Object.entries(next.cost).map(([k, v]) => `${icons[k] || '📦'} ${v}`).join(' • ')}</span>
+                  </button>
+                </div>
               </div>
-              <span class="badge ${maxed ? 'good' : 'loot'}">Niv. ${level}${maxed ? ' • Max' : ''}</span>
-            </div>
-            <div class="colony-upgrade-bottom">
-              <div class="colony-upgrade-bonus">${maxed ? 'Amélioration maximale' : next.bonus}</div>
-              <button class="btn ${maxed ? '' : 'primary'} colony-upgrade-btn" data-upgrade="${def.id}" ${maxed ? 'disabled' : ''}>
-                <strong>${maxed ? 'Max atteint' : 'Améliorer'}</strong>
-                <span>${maxed ? 'Aucun niveau supplémentaire' : Object.entries(next.cost).map(([k, v]) => `${icons[k] || '📦'} ${v}`).join(' • ')}</span>
-              </button>
             </div>
           </article>
         `;
@@ -1993,8 +2840,8 @@ function renderColony() {
     const colonHtml = state.colony.colonists.map(colon => {
         const initials = colon.name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
         return `
-          <article class="colon-card ${getRoleClass(colon.role)} rarity-${colon.rarity} status-${colon.status}">
-            <div class="colon-card-top">
+          <article class="colon-card ${getRoleClass(colon.role)} rarity-${colon.rarity} status-${colon.status} accordion-card">
+            <button class="accordion-trigger accordion-trigger--inner colon-card-top colon-card-top--compact" aria-expanded="false">
               <div class="colon-avatar-wrap">
                 <div class="colon-avatar">${initials}</div>
                 <span class="rarity-pill">${getRarityLabel(colon.rarity)}</span>
@@ -2003,41 +2850,48 @@ function renderColony() {
                 <h3>${colon.name}</h3>
                 <p>${colon.age} ans • ${getRoleLabel(colon.role)}</p>
               </div>
-              <div class="status-pill">${getColonStatusLabel(colon.status)}</div>
-            </div>
-            <div class="colon-meta">
-              <span class="meta-chip">Trait : ${colon.trait}</span>
-              <span class="meta-chip">Spécialité : ${getRoleLabel(Object.entries(colon.skills).sort((a, b) => b[1] - a[1])[0][0])}</span>
-            </div>
-            <div class="colon-stats">
-              ${[
+              <div class="colon-card-head-right">
+                <div class="status-pill">${getColonStatusLabel(colon.status)}</div>
+                <span class="accordion-icon">+</span>
+              </div>
+            </button>
+            <div class="accordion-content hidden">
+              <div class="accordion-card-body">
+                <div class="colon-meta">
+                  <span class="meta-chip">Trait : ${colon.trait}</span>
+                  <span class="meta-chip">Spécialité : ${getRoleLabel(Object.entries(colon.skills).sort((a, b) => b[1] - a[1])[0][0])}</span>
+                </div>
+                <div class="colon-stats">
+                  ${[
             ['Santé', colon.health, ''],
             ['Moral', colon.morale, ''],
             ['Fatigue', colon.fatigue, 'danger']
         ].map(([label, value, tone]) => `
-                <div class="stat-row">
-                  <div class="stat-label-line"><span>${label}</span><strong>${value}%</strong></div>
-                  <div class="stat-bar ${tone}"><span style="width:${value}%"></span></div>
+                    <div class="stat-row">
+                      <div class="stat-label-line"><span>${label}</span><strong>${value}%</strong></div>
+                      <div class="stat-bar ${tone}"><span style="width:${value}%"></span></div>
+                    </div>
+                  `).join('')}
                 </div>
-              `).join('')}
-            </div>
-            <div class="skills-row">
-              <div class="skill-box"><span>Exploration</span><strong>${colon.skills.exploration}</strong></div>
-              <div class="skill-box"><span>Défense</span><strong>${colon.skills.defense}</strong></div>
-              <div class="skill-box"><span>Médecine</span><strong>${colon.skills.medicine}</strong></div>
-              <div class="skill-box"><span>Construction</span><strong>${colon.skills.construction}</strong></div>
-            </div>
-            <div class="consumption-row">
-              <span>Conso / jour</span>
-              <div class="consumption-tags">
-                <span>🍖 ${colon.consumption.food}</span>
-                <span>💧 ${colon.consumption.water}</span>
-                <span>💊 ${colon.consumption.medicine}</span>
+                <div class="skills-row">
+                  <div class="skill-box"><span>Exploration</span><strong>${colon.skills.exploration}</strong></div>
+                  <div class="skill-box"><span>Défense</span><strong>${colon.skills.defense}</strong></div>
+                  <div class="skill-box"><span>Médecine</span><strong>${colon.skills.medicine}</strong></div>
+                  <div class="skill-box"><span>Construction</span><strong>${colon.skills.construction}</strong></div>
+                </div>
+                <div class="consumption-row">
+                  <span>Conso / jour</span>
+                  <div class="consumption-tags">
+                    <span>🍖 ${colon.consumption.food}</span>
+                    <span>💧 ${colon.consumption.water}</span>
+                    <span>💊 ${colon.consumption.medicine}</span>
+                  </div>
+                </div>
+                <div class="colon-role-note">${getRoleEffectText(colon.role, colon)}</div>
+                <div class="colon-actions">
+                  <div class="role-chip-row">${renderRoleAssignment(colon)}</div>
+                </div>
               </div>
-            </div>
-            <div class="colon-role-note">${getRoleEffectText(colon.role, colon)}</div>
-            <div class="colon-actions">
-              <div class="role-chip-row">${renderRoleAssignment(colon)}</div>
             </div>
           </article>
         `;
@@ -2080,13 +2934,135 @@ function renderColony() {
     const recruitBtn = $('recruitColonBtn');
     if (recruitBtn) recruitBtn.addEventListener('click', recruitColonist);
     colonyPanel.querySelectorAll('.colony-upgrade-btn').forEach(btn => btn.addEventListener('click', () => upgradeColonyBuilding(btn.dataset.upgrade)));
+    colonyPanel.querySelectorAll('.accordion-card .accordion-trigger').forEach(trigger => {
+        const content = trigger.parentElement.querySelector('.accordion-content');
+        if (content) trigger.addEventListener('click', () => toggleAccordion(trigger, content));
+    });
     colonyPanel.querySelectorAll('[data-colon-role]').forEach(btn => btn.addEventListener('click', () => {
         const [id, role] = btn.dataset.colonRole.split('|');
         assignColonistRole(id, role);
     }));
 }
 
+
+function renderVehicle() {
+    if (!vehiclePanel || !vehicleHeadText) return;
+
+    if (state.day < state.vehicle.unlockDay) {
+        vehicleHeadText.textContent = `Disponible au jour ${state.vehicle.unlockDay}`;
+        vehiclePanel.innerHTML = `
+            <div class="colony-gate">
+                <div class="colony-gate-copy">
+                    <p class="colony-kicker">Garage improvisé</p>
+                    <h3>Zone véhicule verrouillée</h3>
+                    <p>Le groupe n’a pas encore assez avancé pour sécuriser une zone véhicule. Survis jusqu’au jour ${state.vehicle.unlockDay}.</p>
+                </div>
+                <div class="colony-gate-cta">
+                    <div class="colony-gate-card">
+                        <strong>Jour ${state.day} / ${state.vehicle.unlockDay}</strong>
+                        <small>Débloque la recherche de véhicules récupérables.</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const pending = state.vehicle.pendingFound;
+    const garage = state.vehicle.garage || [];
+    const active = getActiveVehicle();
+    vehicleHeadText.textContent = active ? `Garage improvisé • ${garage.length} véhicule(s) • actif : ${active.name}` : `Garage improvisé • ${garage.length} véhicule(s)`;
+
+    const pendingCard = pending ? `
+        <div class="vehicle-card vehicle-card--pending">
+            <div class="vehicle-headline">
+                <div>
+                    <strong>Véhicule trouvé : ${pending.name}</strong>
+                    <p>${pending.desc}</p>
+                </div>
+                <span class="rarity-pill">${getRarityLabel(pending.rarity)}</span>
+            </div>
+            <div class="merchant-note-grid vehicle-note-grid">
+                <article class="merchant-note"><strong>État</strong><span>${pending.condition}%</span></article>
+                <article class="merchant-note"><strong>Bruit</strong><span>${pending.noise >= 0 ? '+' : ''}${pending.noise}</span></article>
+                <article class="merchant-note"><strong>Capacité</strong><span>+${pending.cargo}</span></article>
+                <article class="merchant-note"><strong>Entretien</strong><span>${Object.entries(pending.upkeep || {}).map(([k, v]) => `${v} ${resourceLabels[k] || k}`).join(' • ') || 'léger'}</span></article>
+                <article class="merchant-note"><strong>Conso</strong><span>${pending.fuelUse} carburant</span></article>
+                <article class="merchant-note"><strong>Bonus loot</strong><span>+${pending.bonusLoot} / +${pending.dangerousBonusLoot}</span></article>
+            </div>
+            <div class="vehicle-actions-row">
+                <button class="btn primary" id="acceptVehicleBtn">Garder</button>
+                <button class="btn" id="refuseVehicleBtn">Refuser</button>
+                <button class="btn" id="scrapVehicleBtn">Démonter / récupérer des pièces</button>
+            </div>
+        </div>` : '';
+
+    const searchCard = `
+        <div class="vehicle-card vehicle-card--search">
+            <div class="vehicle-headline">
+                <div>
+                    <strong>Rechercher un véhicule</strong>
+                    <p>Tu peux stocker plusieurs véhicules dans le garage, mais un seul est équipé pour les sorties. Refuser ou démonter une trouvaille te permet de repartir en chasse plus tard.</p>
+                </div>
+            </div>
+            <div class="vehicle-specs">
+                <span class="badge">65% de chance de trouver quelque chose</span>
+                <span class="badge">Garder, refuser ou démonter</span>
+                <span class="badge">Recherche impossible tant qu’une décision est en attente</span>
+            </div>
+            <button class="btn primary vehicle-main-btn" id="searchVehicleBtn" ${canSearchVehicle() ? '' : 'disabled'}>
+                <strong>Lancer une recherche</strong>
+                <span>${pending ? 'Décision en attente sur le dernier véhicule trouvé' : state.vehicle.searchCooldown > 0 ? `Encore ${state.vehicle.searchCooldown} jour(s) de délai` : 'Prend du temps, augmente un peu le danger'}</span>
+            </button>
+        </div>`;
+
+    const garageCards = garage.length ? garage.map(vehicle => `
+        <div class="vehicle-card vehicle-card--live ${state.vehicle.activeId === vehicle.uid ? 'is-active' : ''}">
+            <div class="vehicle-headline">
+                <div>
+                    <strong>${vehicle.name}</strong>
+                    <p>${vehicle.desc}</p>
+                </div>
+            </div>
+            <div class="merchant-note-grid vehicle-note-grid">
+                <article class="merchant-note"><strong>État</strong><span>${vehicle.condition}%</span></article>
+                <article class="merchant-note"><strong>Bruit</strong><span>${vehicle.noise >= 0 ? '+' : ''}${vehicle.noise}</span></article>
+                <article class="merchant-note"><strong>Capacité</strong><span>+${vehicle.cargo}</span></article>
+                <article class="merchant-note"><strong>Entretien</strong><span>${Object.entries(vehicle.upkeep || {}).map(([k, v]) => `${v} ${resourceLabels[k] || k}`).join(' • ') || 'léger'}</span></article>
+                <article class="merchant-note"><strong>Conso</strong><span>${vehicle.fuelUse} carburant</span></article>
+                <article class="merchant-note"><strong>Bonus loot</strong><span>+${vehicle.bonusLoot} / +${vehicle.dangerousBonusLoot}</span></article>
+            </div>
+            <div class="merchant-legend">
+                <span><strong>Réparation</strong> : ${Object.entries(vehicle.repairCost || {}).map(([k, v]) => `${icons[k] || '📦'} ${v}`).join(' • ')}</span>
+                <span><strong>Statut</strong> : ${vehicle.operational ? 'Opérationnel' : 'À réparer'}</span>
+            </div>
+            <div class="vehicle-actions-row">
+                <button class="btn primary" data-repair-vehicle="${vehicle.uid}" ${vehicle.repaired ? 'disabled' : ''}>${vehicle.repaired ? 'Déjà réparé' : 'Réparer'}</button>
+                <button class="btn" data-equip-vehicle="${vehicle.uid}" ${state.vehicle.activeId === vehicle.uid ? 'disabled' : ''}>${state.vehicle.activeId === vehicle.uid ? 'Équipé' : 'Équiper pour les sorties'}</button>
+                <button class="btn" data-remove-vehicle="${vehicle.uid}">Retirer du garage</button>
+            </div>
+        </div>
+    `).join('') : `<div class="vehicle-card vehicle-card--search"><div class="vehicle-headline"><div><strong>Garage vide</strong><p>Tu n’as encore conservé aucun véhicule. Le premier trouvé pourra devenir ton véhicule actif.</p></div></div></div>`;
+
+    vehiclePanel.innerHTML = `<div class="vehicle-garage-stack">${pendingCard}${searchCard}<div class="vehicle-garage-grid">${garageCards}</div></div>`;
+
+    const searchBtn = $('searchVehicleBtn');
+    if (searchBtn) searchBtn.addEventListener('click', searchVehicle);
+    const acceptBtn = $('acceptVehicleBtn');
+    if (acceptBtn) acceptBtn.addEventListener('click', acceptPendingVehicle);
+    const refuseBtn = $('refuseVehicleBtn');
+    if (refuseBtn) refuseBtn.addEventListener('click', refusePendingVehicle);
+    const scrapBtn = $('scrapVehicleBtn');
+    if (scrapBtn) scrapBtn.addEventListener('click', scrapPendingVehicle);
+
+    vehiclePanel.querySelectorAll('[data-repair-vehicle]').forEach(btn => btn.addEventListener('click', () => repairGarageVehicle(btn.dataset.repairVehicle)));
+    vehiclePanel.querySelectorAll('[data-equip-vehicle]').forEach(btn => btn.addEventListener('click', () => equipVehicle(btn.dataset.equipVehicle)));
+    vehiclePanel.querySelectorAll('[data-remove-vehicle]').forEach(btn => btn.addEventListener('click', () => removeVehicleFromGarage(btn.dataset.removeVehicle)));
+}
+
 function renderJournal() {
+
+
     const groups = {};
 
     state.log.forEach(entry => {
@@ -2125,6 +3101,14 @@ function renderHeader() {
     ambienceText.textContent = getAmbienceText();
 }
 
+
+function syncStickySpacer() {
+    if (!stickyActionsSpacer || !stickyActions) return;
+    const hidden = stickyActions.classList.contains('hidden');
+    const height = hidden ? 0 : stickyActions.offsetHeight;
+    stickyActionsSpacer.style.height = `${height + 12}px`;
+}
+
 function render() {
     renderHeader();
     renderSticky();
@@ -2133,10 +3117,14 @@ function render() {
     renderOverview();
     renderBuildings();
     renderColony();
+    renderVehicle();
     renderSimpleLocations();
     renderDangerousLocations();
     renderInventory();
+    renderMerchant();
     renderJournal();
+    renderActionLabels();
+    syncStickySpacer();
 }
 
 (function init() {

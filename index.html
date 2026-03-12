@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1220" />
-  <title>Last Shelter V6 — Survie Zombie</title>
+  <title>Last Shelter V8 — Survie Zombie</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div id="startScreen" class="start-screen">
   <div class="start-overlay"></div>
   <section class="start-card">
-    <div class="eyebrow">V6 Exploration avancée</div>
+    <div class="eyebrow">V8 Électricité, marchands et véhicules</div>
 
     <div class="start-kicker">Survie réaliste • Monde effondré • Chaque nuit compte</div>
 
@@ -82,36 +82,66 @@
       </div>
     </section>
 
-    <section class="panel inventory-panel inventory-panel--featured">
-      <div class="panel-head">
-        <h2>Inventaire</h2>
-        <small>Ressources disponibles</small>
-      </div>
-      <div class="panel-body">
-        <div class="inventory-list" id="inventoryList"></div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>État détaillé</h2>
-        <small>Vue complète</small>
-      </div>
-      <div class="panel-body">
-        <div class="status-chips-wrap">
-          <div class="chips" id="statusChips"></div>
+    <section class="panel accordion-panel inventory-panel inventory-panel--featured">
+      <button class="accordion-trigger" id="inventoryToggle" aria-expanded="false">
+        <span>
+          <strong>Inventaire</strong>
+          <small>Ressources disponibles</small>
+        </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="inventoryContent">
+        <div class="panel-body panel-body--accordion">
+          <div class="inventory-list" id="inventoryList"></div>
         </div>
-        <div class="stats" id="statsGrid"></div>
       </div>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Situation actuelle</h2>
-        <small id="saveStateLabel">Aucune sauvegarde</small>
+    <section class="panel accordion-panel merchant-panel">
+      <button class="accordion-trigger accordion-trigger--merchant" id="merchantToggle" aria-expanded="false">
+          <span>
+            <strong>Marchand itinérant</strong>
+            <small id="merchantStatusLabel">Aucun contact radio</small>
+          </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="merchantContent">
+        <div class="panel-body panel-body--accordion">
+          <div id="merchantPanel"></div>
+        </div>
       </div>
-      <div class="panel-body">
-        <div class="overview" id="overviewGrid"></div>
+    </section>
+
+    <section class="panel accordion-panel">
+      <button class="accordion-trigger" id="statsToggle" aria-expanded="false">
+        <span>
+          <strong>État détaillé</strong>
+          <small>Vue complète</small>
+        </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="statsContent">
+        <div class="panel-body panel-body--accordion">
+          <div class="status-chips-wrap">
+            <div class="chips" id="statusChips"></div>
+          </div>
+          <div class="stats" id="statsGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel accordion-panel">
+      <button class="accordion-trigger" id="overviewToggle" aria-expanded="false">
+        <span>
+          <strong>Situation actuelle</strong>
+          <small id="saveStateLabel">Aucune sauvegarde</small>
+        </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="overviewContent">
+        <div class="panel-body panel-body--accordion">
+          <div class="overview" id="overviewGrid"></div>
+        </div>
       </div>
     </section>
 
@@ -155,6 +185,26 @@
       <div class="accordion-content hidden" id="colonyContent">
         <div class="panel-body panel-body--accordion panel-body--colony">
           <div id="colonyPanel"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="zone-title zone-title-vehicle">
+      <span>Véhicules</span>
+      <small>Débloqué au jour 15</small>
+    </section>
+
+    <section class="panel accordion-panel vehicle-shell">
+      <button class="accordion-trigger" id="vehicleToggle" aria-expanded="false">
+        <span>
+          <strong>Garage & véhicules</strong>
+          <small id="vehicleHeadText">Disponible au jour 15</small>
+        </span>
+        <span class="accordion-icon">+</span>
+      </button>
+      <div class="accordion-content hidden" id="vehicleContent">
+        <div class="panel-body panel-body--accordion">
+          <div id="vehiclePanel"></div>
         </div>
       </div>
     </section>
@@ -214,15 +264,18 @@
       </div>
     </section>
   </section>
+  <div class="sticky-actions-spacer" id="stickyActionsSpacer" aria-hidden="true"></div>
 </main>
 
 <section class="sticky-actions hidden" id="stickyActions">
   <div class="sticky-actions-main">
-    <button class="action-pill" data-action="sleep">🌙<span>Dormir</span></button>
-    <button class="action-pill" data-action="eat">🍖<span>Manger</span></button>
-    <button class="action-pill" data-action="drink">💧<span>Boire</span></button>
-    <button class="action-pill" data-action="heal">🩹<span>Soigner</span></button>
-    <button class="action-pill more" id="moreActionsBtn">＋<span>Plus</span></button>
+    <div class="sticky-actions-core">
+      <button class="action-pill" data-action="sleep">🌙<span>Dormir</span></button>
+      <button class="action-pill" data-action="eat">🍖<span>Manger</span></button>
+      <button class="action-pill" data-action="drink">💧<span>Boire</span></button>
+      <button class="action-pill" data-action="heal">🩹<span>Soigner</span></button>
+    </div>
+    <button class="action-more-toggle" id="moreActionsBtn" aria-expanded="false">＋ Plus d’actions</button>
   </div>
   <div class="sticky-actions-more hidden" id="moreActionsPanel">
     <button class="action-pill" data-action="relax">🫁<span>Se détendre</span></button>
