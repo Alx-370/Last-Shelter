@@ -264,27 +264,49 @@
       </div>
     </section>
   </section>
-  <div class="sticky-actions-spacer" id="stickyActionsSpacer" aria-hidden="true"></div>
+<!--  <div class="sticky-actions-spacer" id="stickyActionsSpacer" aria-hidden="true"></div>-->
 </main>
 
 <section class="sticky-actions hidden" id="stickyActions">
-  <div class="sticky-actions-main">
-    <div class="sticky-actions-core">
-      <button class="action-pill" data-action="sleep">🌙<span>Dormir</span></button>
-      <button class="action-pill" data-action="eat">🍖<span>Manger</span></button>
-      <button class="action-pill" data-action="drink">💧<span>Boire</span></button>
-      <button class="action-pill" data-action="heal">🩹<span>Soigner</span></button>
+  <div class="sticky-actions-backdrop hidden" id="stickyActionsBackdrop"></div>
+
+  <div class="sticky-actions-shell">
+    <div class="sticky-actions-main">
+      <div class="sticky-actions-core">
+        <button class="action-pill action-pill--primary" data-action="sleep"></button>
+        <button class="action-pill action-pill--primary" data-action="eat"></button>
+        <button class="action-pill action-pill--primary" data-action="drink"></button>
+        <button class="action-pill action-pill--primary" data-action="heal"></button>
+      </div>
+
+      <button class="action-more-toggle" id="moreActionsBtn" aria-expanded="false" aria-controls="moreActionsPanel">
+        <span class="action-more-toggle__icon">＋</span>
+        <span class="action-more-toggle__copy">
+          <strong>Plus</strong>
+          <small>Actions</small>
+        </span>
+      </button>
     </div>
-    <button class="action-more-toggle" id="moreActionsBtn" aria-expanded="false">＋ Plus d’actions</button>
-  </div>
-  <div class="sticky-actions-more hidden" id="moreActionsPanel">
-    <button class="action-pill" data-action="relax">🫁<span>Se détendre</span></button>
-    <button class="action-pill" data-action="fortify">🧱<span>Renforcer</span></button>
-    <button class="action-pill danger" data-action="night-watch">👁️<span>Garde</span></button>
-    <button class="action-pill" data-action="patrol">🚶<span>Patrouiller</span></button>
-    <button class="action-pill" data-action="secure-zone">🛡️<span>Sécuriser</span></button>
-    <button class="action-pill danger" data-action="clear-threat">🔫<span>Éliminer</span></button>
-    <button class="action-pill" data-action="next">⏱️<span>Temps</span></button>
+
+    <div class="sticky-actions-more hidden" id="moreActionsPanel">
+      <div class="sticky-actions-more-head">
+        <div>
+          <strong>Actions secondaires</strong>
+          <small>Choisis une action avancée</small>
+        </div>
+        <button class="sticky-actions-close" id="closeMoreActionsBtn" type="button" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="sticky-actions-more-grid">
+        <button class="action-pill action-pill--secondary" data-action="relax"></button>
+        <button class="action-pill action-pill--secondary" data-action="fortify"></button>
+        <button class="action-pill action-pill--secondary danger" data-action="night-watch"></button>
+        <button class="action-pill action-pill--secondary" data-action="patrol"></button>
+        <button class="action-pill action-pill--secondary" data-action="secure-zone"></button>
+        <button class="action-pill action-pill--secondary danger" data-action="clear-threat"></button>
+        <button class="action-pill action-pill--secondary" data-action="next"></button>
+      </div>
+    </div>
   </div>
 </section>
 

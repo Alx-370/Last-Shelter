@@ -660,6 +660,8 @@ const vehicleContent = $('vehicleContent');
 
 const moreActionsBtn = $('moreActionsBtn');
 const moreActionsPanel = $('moreActionsPanel');
+const stickyActionsBackdrop = $('stickyActionsBackdrop');
+const closeMoreActionsBtn = $('closeMoreActionsBtn');
 
 const stickyVitals = $('stickyVitals');
 const stickyResources = $('stickyResources');
@@ -696,7 +698,13 @@ const eventText = $('eventText');
 const eventChoices = $('eventChoices');
 
 document.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', () => handleAction(btn.dataset.action));
+    btn.addEventListener('click', () => {
+        handleAction(btn.dataset.action);
+
+        if (moreActionsPanel && moreActionsPanel.contains(btn)) {
+            setMoreActionsOpen(false);
+        }
+    });
 });
 
 continueBtn.addEventListener('click', continueGame);
@@ -714,13 +722,43 @@ backMenuBtn.addEventListener('click', () => {
     gameOverScreen.classList.add('hidden');
     toggleGame(false);
 });
+function setMoreActionsOpen(open) {
+    moreActionsPanel.classList.toggle('hidden', !open);
+    stickyActionsBackdrop.classList.toggle('hidden', !open);
+    moreActionsBtn.setAttribute('aria-expanded', String(open));
+
+    moreActionsBtn.innerHTML = open
+        ? `
+            <span class="action-more-toggle__icon">−</span>
+            <span class="action-more-toggle__copy">
+              <strong>Moins</strong>
+              <small>Fermer</small>
+            </span>
+          `
+        : `
+            <span class="action-more-toggle__icon">＋</span>
+            <span class="action-more-toggle__copy">
+              <strong>Plus</strong>
+              <small>Actions</small>
+            </span>
+          `;
+
+    document.body.classList.toggle('drawer-open', open);
+    syncStickySpacer();
+}
+
 moreActionsBtn.addEventListener('click', () => {
     const willOpen = moreActionsPanel.classList.contains('hidden');
-    moreActionsPanel.classList.toggle('hidden');
-    moreActionsBtn.setAttribute('aria-expanded', String(willOpen));
-    moreActionsBtn.textContent = willOpen ? '− Moins d’actions' : '＋ Plus d’actions';
-    syncStickySpacer();
+    setMoreActionsOpen(willOpen);
 });
+
+if (stickyActionsBackdrop) {
+    stickyActionsBackdrop.addEventListener('click', () => setMoreActionsOpen(false));
+}
+
+if (closeMoreActionsBtn) {
+    closeMoreActionsBtn.addEventListener('click', () => setMoreActionsOpen(false));
+}
 
 buildingsToggle.addEventListener('click', () => toggleAccordion(buildingsToggle, buildingsContent));
 if (inventoryToggle && inventoryContent) inventoryToggle.addEventListener('click', () => toggleAccordion(inventoryToggle, inventoryContent));
