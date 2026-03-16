@@ -698,6 +698,10 @@ const statsConfig = [
 
 const $ = id => document.getElementById(id);
 
+const videoIntro = $('videoIntro');
+const introVideo = $('introVideo');
+let introFinished = false;
+
 const startScreen = $('startScreen');
 const gameApp = $('gameApp');
 const continueBtn = $('continueBtn');
@@ -826,6 +830,66 @@ if (rewardAdWatchBtn) rewardAdWatchBtn.addEventListener('click', startRewardAd);
 if (rewardAdCloseBtn) rewardAdCloseBtn.addEventListener('click', closeRewardAdModal);
 if (rewardSpinBtn) rewardSpinBtn.addEventListener('click', spinRewardWheel);
 if (rewardClaimBtn) rewardClaimBtn.addEventListener('click', claimRewardWheelPrize);
+
+function lockIntroVideo() {
+    if (!introVideo) return;
+
+    introVideo.controls = false;
+    introVideo.muted = true;
+    introVideo.defaultMuted = true;
+    introVideo.playsInline = true;
+    introVideo.setAttribute('controlsList', 'nodownload noplaybackrate noremoteplayback nofullscreen');
+    introVideo.setAttribute('disablePictureInPicture', 'true');
+    introVideo.setAttribute('disableremoteplayback', 'true');
+
+    const tryPlay = () => {
+        const playPromise = introVideo.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {});
+        }
+    };
+
+    introVideo.addEventListener('pause', () => {
+        if (!introFinished) {
+            tryPlay();
+        }
+    });
+
+    introVideo.addEventListener('ended', () => {
+        introFinished = true;
+        if (videoIntro) {
+            videoIntro.classList.add('hidden');
+            videoIntro.setAttribute('aria-hidden', 'true');
+        }
+    });
+
+    introVideo.addEventListener('contextmenu', e => e.preventDefault());
+    introVideo.addEventListener('click', e => e.preventDefault());
+    introVideo.addEventListener('dblclick', e => e.preventDefault());
+
+    document.addEventListener('visibilitychange', () => {
+        if (!introFinished && document.visibilityState === 'visible') {
+            tryPlay();
+        }
+    });
+
+    window.addEventListener('keydown', e => {
+        if (introFinished) return;
+        const blocked = [' ', 'Spacebar', 'k', 'K', 'm', 'M', 'f', 'F'];
+        if (blocked.includes(e.key)) {
+            e.preventDefault();
+        }
+    }, true);
+
+    window.addEventListener('pointerdown', () => {
+        if (!introFinished) {
+            tryPlay();
+        }
+    }, { passive: true });
+
+    tryPlay();
+}
+
 if (rewardAdPanel) {
     rewardAdPanel.addEventListener('click', e => {
         const btn = e.target.closest('[data-open-reward-ad]');
@@ -3756,4 +3820,5 @@ if (rewardBackdrop) {
     if (continueBtn) continueBtn.disabled = !saved;
     if (saved) state = normalizeState(saved);
     renderRewardWheel();
+    lockIntroVideo();
 })();

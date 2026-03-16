@@ -2760,3 +2760,23 @@ button{
     grid-template-columns:1fr;
   }
 }
+
+.video-intro{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-intro-media{
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  display: block;
+  background: #000;
+  pointer-events: none;
+}
