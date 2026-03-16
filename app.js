@@ -1,4 +1,4 @@
-const SAVE_KEY = 'last_shelter_v8_power_vehicle_save';
+const SAVE_KEY = 'last_shelter_Save';
 
 const timeSlots = ['Matin', 'Après-midi', 'Soir', 'Nuit'];
 
@@ -89,6 +89,72 @@ const merchantProfiles = {
 };
 
 const lootableResources = ['food', 'water', 'bandage', 'medicine', 'ammo', 'materials', 'fuel'];
+
+const tutorialSlides = [
+    {
+        title: '1. Le but du jeu',
+        text: 'Ton objectif est simple : survivre le plus longtemps possible. Tu dois garder assez de santé, d’énergie et de ressources pour tenir jour après jour.',
+        points: [
+            { title: 'Surveille les stats', text: 'La faim, la soif, l’énergie, le moral, le stress et l’infection déterminent si tu tiens.' },
+            { title: 'La nuit est critique', text: 'Le danger augmente vite si ton abri est faible, trop bruyant ou mal préparé.' },
+            { title: 'Chaque décision compte', text: 'Les petites actions du quotidien sont souvent ce qui évite l’effondrement.' }
+        ]
+    },
+    {
+        title: '2. Le rythme d’une journée',
+        text: 'Une journée est découpée en matin, après-midi, soir et nuit. Beaucoup d’actions font avancer le temps.',
+        points: [
+            { title: 'Actions de base', text: 'Manger, boire, dormir et se soigner servent à stabiliser la situation.' },
+            { title: 'Actions avancées', text: 'Renforcer, patrouiller ou faire la garde permet de mieux préparer la suite.' },
+            { title: 'Gestion du risque', text: 'Avancer le temps sans préparation peut t’exposer à une nuit difficile.' }
+        ]
+    },
+    {
+        title: '3. Explorer sans se faire tuer',
+        text: 'Le loot vient surtout de l’exploration. Il faut doser le risque entre sorties sûres et expéditions rentables.',
+        points: [
+            { title: 'Sorties simples', text: 'Aucun coût direct, peu de risque, butin modéré. Idéal pour tenir les premiers jours.' },
+            { title: 'Expéditions dangereuses', text: 'Demandent souvent munitions et carburant, mais offrent de meilleurs gains.' },
+            { title: 'Abri, bruit, danger', text: 'Un abri faible, trop de bruit ou un danger extérieur élevé peuvent te rattraper très vite.' }
+        ]
+    },
+    {
+        title: '4. Les grands axes du jeu',
+        text: 'La vraie progression vient du long terme : améliorer l’abri, sécuriser la production et débloquer les systèmes avancés.',
+        points: [
+            { title: 'Abri & électricité', text: 'Construis pour mieux produire, stocker l’énergie et rester stable.' },
+            { title: 'Jour 15 : véhicules', text: 'Le garage améliore les expéditions et ouvre de meilleures récupérations.' },
+            { title: 'Jour 30 : colonie', text: 'Tu passes d’une survie solo à une gestion de communauté. Tu peux aussi utiliser le bonus pub pour tenter de sécuriser une caisse de ravitaillement bonus.' }
+        ]
+    }
+];
+
+const rewardWheelSegments = [
+    { id: 'ration_crate', label: '🍖 Rations', desc: '+4 nourriture, +2 eau', rewards: { food: 4, water: 2 }, weight: 22, rarity: 'courant' },
+    { id: 'medical_case', label: '🩹 Médical', desc: '+2 bandages, +1 médicament', rewards: { bandage: 2, medicine: 1 }, weight: 15, rarity: 'courant' },
+    { id: 'scrap_bundle', label: '🔩 Ferraille', desc: '+5 matériaux', rewards: { materials: 5 }, weight: 18, rarity: 'courant' },
+    { id: 'ammo_cache', label: '🔫 Munitions', desc: '+4 munitions, +1 bandage', rewards: { ammo: 4, bandage: 1 }, weight: 12, rarity: 'rare' },
+    { id: 'fuel_can', label: '⛽ Carburant', desc: '+3 carburant', rewards: { fuel: 3 }, weight: 10, rarity: 'rare' },
+    { id: 'field_kit', label: '🎒 Kit terrain', desc: '+2 eau, +2 nourriture, +2 matériaux', rewards: { water: 2, food: 2, materials: 2 }, weight: 11, rarity: 'rare' },
+    { id: 'convoy_drop', label: '📦 Convoi', desc: '+3 nourriture, +3 eau, +2 matériaux, +1 munition', rewards: { food: 3, water: 3, materials: 2, ammo: 1 }, weight: 7, rarity: 'épique' },
+    { id: 'black_case', label: '☣️ Caisse noire', desc: '+1 médicament, +2 carburant, +3 munitions', rewards: { medicine: 1, fuel: 2, ammo: 3 }, weight: 5, rarity: 'épique' }
+];
+
+const rewardAdConfig = {
+    enabled: true,
+    testMode: true,
+    androidAppId: 'ca-app-pub-2595724577989177~3048914982',
+    androidRewardedId: 'ca-app-pub-2595724577989177/7057641867',
+    iosRewardedId: 'ca-app-pub-3940256099942544/1712485313'
+};
+
+const rewardAdRuntime = {
+    provider: 'Simulation',
+    nativeAvailable: false,
+    initialized: false,
+    consentReady: false,
+    lastError: ''
+};
 
 const colonyFoundingCost = { materials: 12, food: 8, water: 8, ammo: 2, fuel: 5 };
 
@@ -526,6 +592,11 @@ function initialState() {
         noise: 18,
         danger: 22,
         lastSavedAt: null,
+        tutorialSeen: false,
+        rewardAds: {
+            lastClaimDay: 0,
+            totalClaims: 0
+        },
         nightGuard: 0,
         deathReason: null,
         statsSummary: {
@@ -631,6 +702,7 @@ const startScreen = $('startScreen');
 const gameApp = $('gameApp');
 const continueBtn = $('continueBtn');
 const newGameBtn = $('newGameBtn');
+const tutorialMenuBtn = $('tutorialMenuBtn');
 const resetSaveBtn = $('resetSaveBtn');
 const saveNowBtn = $('saveNowBtn');
 const stickyActions = $('stickyActions');
@@ -682,6 +754,9 @@ const buildingsGrid = $('buildingsGrid');
 const saveStateLabel = $('saveStateLabel');
 const weatherLabel = $('weatherLabel');
 const ambienceText = $('ambienceText');
+const rewardAdStatus = $('rewardAdStatus');
+const rewardAdPanel = $('rewardAdPanel');
+const rewardQuickAccess = $('rewardQuickAccess');
 const colonyPanel = $('colonyPanel');
 const colonyHeadText = $('colonyHeadText');
 const colonyPhaseBadge = $('colonyPhaseBadge');
@@ -696,6 +771,32 @@ const eventModal = $('eventModal');
 const eventTitle = $('eventTitle');
 const eventText = $('eventText');
 const eventChoices = $('eventChoices');
+const tutorialModal = $('tutorialModal');
+const tutorialProgress = $('tutorialProgress');
+const tutorialTitle = $('tutorialTitle');
+const tutorialText = $('tutorialText');
+const tutorialPoints = $('tutorialPoints');
+const tutorialPrevBtn = $('tutorialPrevBtn');
+const tutorialNextBtn = $('tutorialNextBtn');
+const tutorialSkipBtn = $('tutorialSkipBtn');
+const rewardAdModal = $('rewardAdModal');
+const rewardAdStage = $('rewardAdStage');
+const rewardWheelStage = $('rewardWheelStage');
+const rewardAdText = $('rewardAdText');
+const rewardAdCountdown = $('rewardAdCountdown');
+const rewardAdWatchBtn = $('rewardAdWatchBtn');
+const rewardAdCloseBtn = $('rewardAdCloseBtn');
+const rewardWheel = $('rewardWheel');
+const rewardWheelLabels = $('rewardWheelLabels');
+const rewardSpinBtn = $('rewardSpinBtn');
+const rewardClaimBtn = $('rewardClaimBtn');
+const rewardSpinResult = $('rewardSpinResult');
+const rewardWheelText = $('rewardWheelText');
+const rewardAdModeBadge = $('rewardAdModeBadge');
+const rewardToggle = $('rewardToggle');
+const rewardContent = $('rewardContent');
+const rewardAdProviderBadge = $('rewardAdProviderBadge');
+const rewardAdProviderText = $('rewardAdProviderText');
 
 document.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -707,22 +808,65 @@ document.querySelectorAll('[data-action]').forEach(btn => {
     });
 });
 
-continueBtn.addEventListener('click', continueGame);
-newGameBtn.addEventListener('click', startNewGame);
-resetSaveBtn.addEventListener('click', resetSave);
-saveNowBtn.addEventListener('click', () => {
-    save();
-    toast('Sauvegarde', 'Partie sauvegardée.', 'success');
-});
-restartBtn.addEventListener('click', () => {
-    gameOverScreen.classList.add('hidden');
-    startNewGame();
-});
-backMenuBtn.addEventListener('click', () => {
-    gameOverScreen.classList.add('hidden');
-    toggleGame(false);
-});
+if (continueBtn) continueBtn.addEventListener('click', continueGame);
+if (newGameBtn) newGameBtn.addEventListener('click', startNewGame);
+if (resetSaveBtn) resetSaveBtn.addEventListener('click', resetSave);
+if (saveNowBtn) {
+    saveNowBtn.addEventListener('click', () => {
+        save();
+        toast('Sauvegarde', 'Partie sauvegardée.', 'success');
+    });
+}
+
+if (tutorialMenuBtn) tutorialMenuBtn.addEventListener('click', () => openTutorial(false));
+if (tutorialPrevBtn) tutorialPrevBtn.addEventListener('click', () => changeTutorialStep(-1));
+if (tutorialNextBtn) tutorialNextBtn.addEventListener('click', () => changeTutorialStep(1));
+if (tutorialSkipBtn) tutorialSkipBtn.addEventListener('click', () => closeTutorial(true));
+if (rewardAdWatchBtn) rewardAdWatchBtn.addEventListener('click', startRewardAd);
+if (rewardAdCloseBtn) rewardAdCloseBtn.addEventListener('click', closeRewardAdModal);
+if (rewardSpinBtn) rewardSpinBtn.addEventListener('click', spinRewardWheel);
+if (rewardClaimBtn) rewardClaimBtn.addEventListener('click', claimRewardWheelPrize);
+if (rewardAdPanel) {
+    rewardAdPanel.addEventListener('click', e => {
+        const btn = e.target.closest('[data-open-reward-ad]');
+        if (!btn) return;
+        void openRewardAdModal();
+    });
+}
+if (rewardQuickAccess) {
+    rewardQuickAccess.addEventListener('click', e => {
+        const btn = e.target.closest('[data-open-reward-section], [data-open-reward-ad]');
+        if (!btn) return;
+        if (btn.hasAttribute('data-open-reward-ad')) {
+            void openRewardAdModal();
+            return;
+        }
+        openRewardSupplySection();
+    });
+}
+
+if (restartBtn && gameOverScreen) {
+    restartBtn.addEventListener('click', () => {
+        gameOverScreen.classList.add('hidden');
+        startNewGame();
+    });
+}
+
+if (backMenuBtn && gameOverScreen) {
+    backMenuBtn.addEventListener('click', () => {
+        gameOverScreen.classList.add('hidden');
+        toggleGame(false);
+    });
+}
+
+let tutorialStepIndex = 0;
+let rewardAdTimer = null;
+let pendingWheelReward = null;
+let rewardSpinLocked = false;
+
 function setMoreActionsOpen(open) {
+    if (!moreActionsPanel || !stickyActionsBackdrop || !moreActionsBtn) return;
+
     moreActionsPanel.classList.toggle('hidden', !open);
     stickyActionsBackdrop.classList.toggle('hidden', !open);
     moreActionsBtn.setAttribute('aria-expanded', String(open));
@@ -747,10 +891,12 @@ function setMoreActionsOpen(open) {
     syncStickySpacer();
 }
 
-moreActionsBtn.addEventListener('click', () => {
-    const willOpen = moreActionsPanel.classList.contains('hidden');
-    setMoreActionsOpen(willOpen);
-});
+if (moreActionsBtn && moreActionsPanel) {
+    moreActionsBtn.addEventListener('click', () => {
+        const willOpen = moreActionsPanel.classList.contains('hidden');
+        setMoreActionsOpen(willOpen);
+    });
+}
 
 if (stickyActionsBackdrop) {
     stickyActionsBackdrop.addEventListener('click', () => setMoreActionsOpen(false));
@@ -760,22 +906,32 @@ if (closeMoreActionsBtn) {
     closeMoreActionsBtn.addEventListener('click', () => setMoreActionsOpen(false));
 }
 
-buildingsToggle.addEventListener('click', () => toggleAccordion(buildingsToggle, buildingsContent));
+if (buildingsToggle && buildingsContent) buildingsToggle.addEventListener('click', () => toggleAccordion(buildingsToggle, buildingsContent));
 if (inventoryToggle && inventoryContent) inventoryToggle.addEventListener('click', () => toggleAccordion(inventoryToggle, inventoryContent));
 if (statsToggle && statsContent) statsToggle.addEventListener('click', () => toggleAccordion(statsToggle, statsContent));
 if (overviewToggle && overviewContent) overviewToggle.addEventListener('click', () => toggleAccordion(overviewToggle, overviewContent));
-simpleToggle.addEventListener('click', () => toggleAccordion(simpleToggle, simpleContent));
-dangerousToggle.addEventListener('click', () => toggleAccordion(dangerousToggle, dangerousContent));
-journalToggle.addEventListener('click', () => toggleAccordion(journalToggle, journalContent));
+if (simpleToggle && simpleContent) simpleToggle.addEventListener('click', () => toggleAccordion(simpleToggle, simpleContent));
+if (dangerousToggle && dangerousContent) dangerousToggle.addEventListener('click', () => toggleAccordion(dangerousToggle, dangerousContent));
+if (journalToggle && journalContent) journalToggle.addEventListener('click', () => toggleAccordion(journalToggle, journalContent));
 if (colonyToggle && colonyContent) colonyToggle.addEventListener('click', () => toggleAccordion(colonyToggle, colonyContent));
 if (merchantToggle && merchantContent) merchantToggle.addEventListener('click', () => toggleAccordion(merchantToggle, merchantContent));
 if (vehicleToggle && vehicleContent) vehicleToggle.addEventListener('click', () => toggleAccordion(vehicleToggle, vehicleContent));
+if (rewardToggle && rewardContent) rewardToggle.addEventListener('click', () => toggleAccordion(rewardToggle, rewardContent));
+
 window.addEventListener('resize', syncStickySpacer);
 
 function toggleAccordion(trigger, content) {
     const open = trigger.getAttribute('aria-expanded') === 'true';
     trigger.setAttribute('aria-expanded', String(!open));
     content.classList.toggle('hidden', open);
+}
+
+function openRewardSupplySection() {
+    if (rewardToggle && rewardContent && rewardToggle.getAttribute('aria-expanded') !== 'true') {
+        toggleAccordion(rewardToggle, rewardContent);
+    }
+    const panel = rewardToggle?.closest('.bonus-panel') || rewardQuickAccess;
+    panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function clamp(v, min = 0, max = 100) {
@@ -822,7 +978,7 @@ function save() {
     state.lastSavedAt = new Date().toISOString();
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     renderSaveLabel();
-    continueBtn.disabled = false;
+    if (continueBtn) continueBtn.disabled = false;
 }
 
 function load() {
@@ -866,6 +1022,7 @@ function normalizeState(raw) {
     const rawColony = raw?.colony || {};
     const rawColonyUpgrades = rawColony.upgrades || {};
     const rawColonists = rawColony.colonists || [];
+    const rawRewardAds = raw?.rewardAds || {};
 
     const legacyCurrent = rawVehicle['current'] || null;
     const legacyFound = !!rawVehicle['found'];
@@ -882,6 +1039,8 @@ function normalizeState(raw) {
     next.merchant = { ...base.merchant, ...rawMerchant };
     next.power = { ...base.power, ...rawPower };
     next.vehicle = { ...base.vehicle, ...rawVehicle };
+    next.rewardAds = { ...base.rewardAds, ...rawRewardAds };
+    next.tutorialSeen = typeof raw?.tutorialSeen === 'boolean' ? raw.tutorialSeen : base.tutorialSeen;
 
     next.vehicle.garage = Array.isArray(rawVehicle.garage)
         ? rawVehicle.garage.map((vehicle, index) => ({
@@ -1142,6 +1301,351 @@ function toggleGame(show) {
     startScreen.classList.toggle('hidden', show);
     gameApp.classList.toggle('hidden', !show);
     stickyActions.classList.toggle('hidden', !show);
+}
+
+function changeTutorialStep(delta) {
+    const nextIndex = tutorialStepIndex + delta;
+    if (nextIndex < 0) return;
+    if (nextIndex >= tutorialSlides.length) {
+        closeTutorial(true);
+        return;
+    }
+    tutorialStepIndex = nextIndex;
+    renderTutorial();
+}
+
+function renderTutorial() {
+    const slide = tutorialSlides[tutorialStepIndex];
+    tutorialProgress.textContent = `Étape ${tutorialStepIndex + 1} / ${tutorialSlides.length}`;
+    tutorialTitle.textContent = slide.title;
+    tutorialText.textContent = slide.text;
+    tutorialPoints.innerHTML = slide.points.map(point => `
+      <article class="tutorial-point">
+        <strong>${point.title}</strong>
+        <span>${point.text}</span>
+      </article>
+    `).join('');
+
+    tutorialPrevBtn.disabled = tutorialStepIndex === 0;
+    const isLast = tutorialStepIndex === tutorialSlides.length - 1;
+    tutorialNextBtn.innerHTML = isLast
+        ? '<strong>Commencer</strong><span>Fermer le tutoriel et jouer</span>'
+        : '<strong>Suivant</strong><span>Voir l’étape suivante</span>';
+}
+
+function openTutorial(markSeenOnClose = true) {
+    tutorialStepIndex = 0;
+    tutorialModal.dataset.markSeen = markSeenOnClose ? 'true' : 'false';
+    tutorialModal.classList.remove('hidden');
+    renderTutorial();
+}
+
+function closeTutorial(markSeen = false) {
+    tutorialModal.classList.add('hidden');
+    const shouldMarkSeen = tutorialModal.dataset.markSeen === 'true' || markSeen;
+    if (shouldMarkSeen && !state.tutorialSeen) {
+        state.tutorialSeen = true;
+        save();
+        render();
+    }
+}
+
+function canUseRewardAd() {
+    return state.rewardAds.lastClaimDay !== state.day;
+}
+
+function formatRewardsMap(rewards) {
+    return Object.entries(rewards).map(([resource, amount]) => `${amount} ${resourceLabels[resource] || resource}`).join(', ');
+}
+
+function clearRewardAdTimer() {
+    if (rewardAdTimer) {
+        clearInterval(rewardAdTimer);
+        rewardAdTimer = null;
+    }
+}
+
+function getCapacitorPlatform() {
+    return window.Capacitor?.getPlatform?.() || 'web';
+}
+
+function getAdMobPlugin() {
+    return window.Capacitor?.Plugins?.AdMob || window.Capacitor?.Plugins?.admob || null;
+}
+
+function getRewardedAdUnitId() {
+    const platform = getCapacitorPlatform();
+    if (platform === 'android') return rewardAdConfig.androidRewardedId;
+    if (platform === 'ios') return rewardAdConfig.iosRewardedId;
+    return '';
+}
+
+async function initRewardedAds() {
+    if (rewardAdRuntime.initialized) return rewardAdRuntime;
+
+    const plugin = getAdMobPlugin();
+    const platform = getCapacitorPlatform();
+    if (!rewardAdConfig.enabled || !plugin || platform === 'web') {
+        rewardAdRuntime.provider = 'Simulation';
+        rewardAdRuntime.nativeAvailable = false;
+        rewardAdRuntime.initialized = true;
+        return rewardAdRuntime;
+    }
+
+    try {
+        await plugin.initialize?.();
+
+        if (plugin.requestConsentInfo) {
+            let consentInfo = await plugin.requestConsentInfo();
+            if (consentInfo && consentInfo.canRequestAds === false && plugin.showConsentForm) {
+                consentInfo = await plugin.showConsentForm();
+            }
+            rewardAdRuntime.consentReady = consentInfo?.canRequestAds !== false;
+        } else {
+            rewardAdRuntime.consentReady = true;
+        }
+
+        rewardAdRuntime.provider = rewardAdConfig.testMode ? 'AdMob test' : 'AdMob live';
+        rewardAdRuntime.nativeAvailable = true;
+        rewardAdRuntime.initialized = true;
+        rewardAdRuntime.lastError = '';
+    } catch (error) {
+        console.warn('AdMob init failed, fallback to simulation.', error);
+        rewardAdRuntime.provider = 'Simulation';
+        rewardAdRuntime.nativeAvailable = false;
+        rewardAdRuntime.initialized = true;
+        rewardAdRuntime.lastError = String(error?.message || error || 'Erreur inconnue');
+    }
+
+    return rewardAdRuntime;
+}
+
+function getRewardProviderLine() {
+    if (rewardAdRuntime.nativeAvailable) {
+        return rewardAdConfig.testMode
+            ? 'AdMob actif en mode test sur APK Capacitor.'
+            : 'AdMob actif avec unité récompensée.';
+    }
+    return 'Mode navigateur : séquence récompensée simulée.';
+}
+
+function renderRewardWheel() {
+    if (!rewardWheel || !rewardWheelLabels) return;
+    rewardWheel.classList.remove('opening', 'opened');
+    rewardWheelLabels.innerHTML = rewardWheelSegments.map(segment => `
+      <article class="reward-wheel-item">
+        <strong>${segment.label}</strong>
+        <small>${segment.desc}</small>
+        <em>${segment.rarity}</em>
+      </article>
+    `).join('');
+}
+
+function resetRewardModalUi() {
+    pendingWheelReward = null;
+    rewardSpinLocked = false;
+
+    if (rewardAdWatchBtn) rewardAdWatchBtn.disabled = false;
+    if (rewardAdCloseBtn) rewardAdCloseBtn.disabled = false;
+    if (rewardSpinBtn) rewardSpinBtn.disabled = false;
+    if (rewardClaimBtn) rewardClaimBtn.classList.add('hidden');
+    if (rewardSpinBtn) rewardSpinBtn.classList.remove('hidden');
+
+    if (rewardSpinResult) {
+        rewardSpinResult.className = 'reward-result locked';
+        rewardSpinResult.textContent = 'Aucune caisse ouverte pour le moment.';
+    }
+
+    if (rewardAdCountdown) rewardAdCountdown.textContent = 'Prêt';
+    if (rewardAdText) {
+        rewardAdText.textContent = 'Regarde la pub récompensée pour sécuriser une caisse de ravitaillement abandonnée. Une seule tentative par jour de survie.';
+    }
+    if (rewardWheelText) {
+        rewardWheelText.textContent = 'La diffusion est validée. Ouvre la caisse et récupère un lot de survie.';
+    }
+    if (rewardAdProviderText) {
+        rewardAdProviderText.textContent = getRewardProviderLine();
+    }
+    if (rewardAdProviderBadge) {
+        rewardAdProviderBadge.textContent = rewardAdRuntime.provider.toUpperCase();
+    }
+
+    renderRewardWheel();
+}
+
+async function openRewardAdModal() {
+    if (!canUseRewardAd()) {
+        toast('Bonus déjà pris', 'La caisse bonus a déjà été récupérée aujourd’hui.', 'warning');
+        return;
+    }
+
+    if (!rewardAdModal.classList.contains('hidden')) return;
+    if (!moreActionsPanel.classList.contains('hidden')) setMoreActionsOpen(false);
+
+    await initRewardedAds();
+    clearRewardAdTimer();
+    rewardAdModal.classList.remove('hidden');
+    rewardAdStage.classList.remove('hidden');
+    rewardWheelStage.classList.add('hidden');
+    resetRewardModalUi();
+}
+
+function closeRewardAdModal() {
+    clearRewardAdTimer();
+    rewardAdModal.classList.add('hidden');
+}
+
+function unlockLootCrate() {
+    clearRewardAdTimer();
+    if (rewardAdCountdown) rewardAdCountdown.textContent = 'Validé';
+    if (rewardAdStage) rewardAdStage.classList.add('hidden');
+    if (rewardWheelStage) rewardWheelStage.classList.remove('hidden');
+    if (rewardSpinResult) {
+        rewardSpinResult.className = 'reward-result locked';
+        rewardSpinResult.textContent = 'Transmission validée. La caisse peut être ouverte.';
+    }
+}
+
+function startRewardAdSimulation() {
+    let remaining = 5;
+
+    if (rewardAdCountdown) rewardAdCountdown.textContent = `${remaining}s`;
+    if (rewardAdText) {
+        rewardAdText.textContent = 'Diffusion simulée en cours... reste jusqu’au bout pour sécuriser la caisse.';
+    }
+
+    rewardAdTimer = setInterval(() => {
+        remaining -= 1;
+
+        if (remaining > 0) {
+            if (rewardAdCountdown) rewardAdCountdown.textContent = `${remaining}s`;
+            return;
+        }
+
+        unlockLootCrate();
+    }, 1000);
+}
+async function startRewardAd() {
+    if (!canUseRewardAd()) {
+        toast('Bonus déjà pris', 'Reviens le prochain jour de survie pour récupérer une nouvelle caisse.', 'warning');
+        closeRewardAdModal();
+        return;
+    }
+
+    clearRewardAdTimer();
+
+    if (rewardAdWatchBtn) rewardAdWatchBtn.disabled = true;
+    if (rewardAdCloseBtn) rewardAdCloseBtn.disabled = true;
+
+    const runtime = await initRewardedAds();
+    const plugin = getAdMobPlugin();
+    const adId = getRewardedAdUnitId();
+
+    if (runtime.nativeAvailable && plugin && adId) {
+        try {
+            if (rewardAdText) {
+                rewardAdText.textContent = 'Chargement de la pub récompensée AdMob...';
+            }
+            if (rewardAdCountdown) {
+                rewardAdCountdown.textContent = 'Chargement';
+            }
+
+            await plugin.prepareRewardVideoAd({
+                adId,
+                isTesting: !!rewardAdConfig.testMode,
+            });
+
+            if (rewardAdCountdown) {
+                rewardAdCountdown.textContent = 'Lecture';
+            }
+            if (rewardAdText) {
+                rewardAdText.textContent = 'Pub en cours... attends la fin pour valider la caisse.';
+            }
+
+            await plugin.showRewardVideoAd();
+            unlockLootCrate();
+            return;
+        } catch (error) {
+            console.warn('Rewarded AdMob failed, fallback to simulation.', error);
+            rewardAdRuntime.lastError = String(error?.message || error || 'Erreur inconnue');
+            rewardAdRuntime.provider = 'Simulation';
+            rewardAdRuntime.nativeAvailable = false;
+
+            if (rewardAdProviderText) {
+                rewardAdProviderText.textContent = 'AdMob indisponible sur cet environnement, fallback simulation activé.';
+            }
+            if (rewardAdProviderBadge) {
+                rewardAdProviderBadge.textContent = 'SIMULATION';
+            }
+
+            toast('AdMob indisponible', 'Fallback simulation activé pour tester le flux de récompense.', 'warning');
+        }
+    }
+
+    startRewardAdSimulation();
+}
+
+function pickRewardWheelSegment() {
+    const total = rewardWheelSegments.reduce((sum, segment) => sum + segment.weight, 0);
+    let roll = Math.random() * total;
+    for (const segment of rewardWheelSegments) {
+        roll -= segment.weight;
+        if (roll <= 0) return segment;
+    }
+    return rewardWheelSegments[rewardWheelSegments.length - 1];
+}
+
+function spinRewardWheel() {
+    if (!rewardWheel || !rewardSpinBtn || !rewardSpinResult || !rewardClaimBtn) return;
+    if (rewardSpinLocked || pendingWheelReward) return;
+
+    rewardSpinLocked = true;
+    rewardSpinBtn.disabled = true;
+    rewardWheel.classList.remove('opened');
+    void rewardWheel.offsetWidth;
+    rewardWheel.classList.add('opening');
+    rewardSpinResult.className = 'reward-result locked';
+    rewardSpinResult.textContent = 'Ouverture de la caisse en cours...';
+
+    window.setTimeout(() => {
+        const segment = pickRewardWheelSegment();
+        pendingWheelReward = segment;
+        rewardSpinLocked = false;
+        rewardWheel.classList.remove('opening');
+        rewardWheel.classList.add('opened');
+        rewardSpinResult.className = 'reward-result ready';
+        rewardSpinResult.textContent = `Lot obtenu : ${segment.desc}.`;
+        rewardSpinBtn.classList.add('hidden');
+        rewardClaimBtn.classList.remove('hidden');
+    }, 1350);
+}
+
+function claimRewardWheelPrize() {
+    if (!pendingWheelReward) return;
+
+    Object.entries(pendingWheelReward.rewards).forEach(([resource, amount]) => {
+        state.inventory[resource] = (state.inventory[resource] || 0) + amount;
+    });
+
+    state.rewardAds.lastClaimDay = state.day;
+    state.rewardAds.totalClaims += 1;
+
+    addLog(
+        'Caisse de ravitaillement',
+        `La caisse bonus te donne ${formatRewardsMap(pendingWheelReward.rewards)}.`,
+        'Bonus'
+    );
+
+    toast(
+        'Caisse récupérée',
+        `Gains : ${formatRewardsMap(pendingWheelReward.rewards)}.`,
+        'success'
+    );
+
+    pendingWheelReward = null;
+    save();
+    render();
+    closeRewardAdModal();
 }
 
 function addLog(title, text, tag = 'Système') {
@@ -1674,7 +2178,9 @@ function startNewGame() {
     addLog('Début de survie', 'Tu sécurises l’abri tant bien que mal. Les réserves sont limitées, le danger monte dehors, et les prochaines heures vont décider si tu peux vraiment tenir.', 'Prologue');
     toggleGame(true);
     save();
+    initRewardedAds().then(() => renderRewardAdPanel());
     render();
+    if (!state.tutorialSeen) openTutorial(true);
     toast('Nouvelle partie', 'Bonne chance', 'success');
 }
 
@@ -1687,13 +2193,15 @@ function continueGame() {
     state = normalizeState(saved);
     updateMerchantForNewDay();
     toggleGame(true);
+    initRewardedAds().then(() => renderRewardAdPanel());
     render();
+    if (!state.tutorialSeen) openTutorial(true);
     toast('Continuer', 'Sauvegarde chargée.', 'info');
 }
 
 function resetSave() {
     localStorage.removeItem(SAVE_KEY);
-    continueBtn.disabled = true;
+    if (continueBtn) continueBtn.disabled = true;
     toast('Sauvegarde effacée', 'La progression enregistrée a été supprimée.', 'warning');
 }
 
@@ -2090,7 +2598,7 @@ function checkDeath() {
 }
 
 function handleAction(action) {
-    if (!moreActionsPanel.classList.contains('hidden')) {
+    if (moreActionsPanel && !moreActionsPanel.classList.contains('hidden')) {
         moreActionsPanel.classList.add('hidden');
     }
 
@@ -2578,6 +3086,72 @@ function renderOverview() {
       <strong>${i.value}</strong>
     </article>
   `).join('');
+}
+
+function renderRewardAdPanel() {
+    if (!rewardAdPanel || !rewardAdStatus) return;
+    const available = canUseRewardAd();
+    rewardAdStatus.textContent = available
+        ? 'Une caisse bonus est disponible aujourd’hui'
+        : `Convoi déjà récupéré au jour ${state.rewardAds.lastClaimDay}`;
+
+    if (rewardAdModeBadge) {
+        rewardAdModeBadge.textContent = rewardAdRuntime.nativeAvailable
+            ? (rewardAdConfig.testMode ? 'AdMob test' : 'AdMob live')
+            : 'Simulation';
+    }
+
+    rewardAdPanel.innerHTML = `
+      <article class="reward-ad-panel reward-ad-panel--supply">
+        <div class="reward-ad-hero">
+          <div class="reward-ad-radio-visual" aria-hidden="true">
+            <span class="reward-radio-dot"></span>
+            <span class="reward-radio-ring reward-radio-ring--one"></span>
+            <span class="reward-radio-ring reward-radio-ring--two"></span>
+            <span class="reward-radio-ring reward-radio-ring--three"></span>
+            <div class="reward-drop-crate-mini">DROP</div>
+          </div>
+          <div class="reward-ad-panel-copy">
+            <div class="reward-ad-title-row">
+              <div>
+                <strong>${available ? 'Signal capté : convoi en approche' : 'Fréquence silencieuse'}</strong>
+                <p>${available ? 'Une fréquence pirate diffuse un signal sponsorisé. Regarde la pub, verrouille la zone puis ouvre une caisse de survie abandonnée.' : 'Le ravitaillement radio du jour a déjà été sécurisé. Il faudra attendre le prochain jour pour relancer la balise.'}</p>
+              </div>
+              <span class="reward-ad-chip">${available ? 'Disponible' : 'Indisponible'}</span>
+            </div>
+            <div class="reward-ad-action-row">
+              <button class="btn ${available ? 'primary' : ''}" data-open-reward-ad ${available ? '' : 'disabled'}>
+                <strong>${available ? 'Ouvrir le ravitaillement' : 'Revenir demain'}</strong>
+                <span>${available ? 'Lancer la pub puis ouvrir la caisse' : 'Le convoi est déjà tombé aujourd’hui'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    `;
+
+    renderRewardQuickAccess();
+}
+
+function renderRewardQuickAccess() {
+    if (!rewardQuickAccess) return;
+    const available = canUseRewardAd();
+    rewardQuickAccess.classList.toggle('hidden', !available);
+    if (!available) {
+        rewardQuickAccess.innerHTML = '';
+        return;
+    }
+    rewardQuickAccess.innerHTML = `
+      <button class="reward-quick-btn panel" data-open-reward-section>
+        <span class="reward-quick-btn__pulse" aria-hidden="true"></span>
+        <span class="reward-quick-btn__icon">📻</span>
+        <span class="reward-quick-btn__copy">
+          <strong>Convoi radio disponible</strong>
+          <small>Accéder vite au ravitaillement bonus</small>
+        </span>
+        <span class="reward-quick-btn__cta">Voir</span>
+      </button>
+    `;
 }
 
 function renderBuildings() {
@@ -3153,6 +3727,7 @@ function render() {
     renderStats();
     renderChips();
     renderOverview();
+    renderRewardAdPanel();
     renderBuildings();
     renderColony();
     renderVehicle();
@@ -3165,8 +3740,20 @@ function render() {
     syncStickySpacer();
 }
 
+const tutorialBackdrop = tutorialModal?.querySelector('.modal-backdrop');
+const rewardBackdrop = rewardAdModal?.querySelector('.modal-backdrop');
+
+if (tutorialBackdrop) {
+    tutorialBackdrop.addEventListener('click', () => closeTutorial(false));
+}
+
+if (rewardBackdrop) {
+    rewardBackdrop.addEventListener('click', closeRewardAdModal);
+}
+
 (function init() {
     const saved = load();
-    continueBtn.disabled = !saved;
+    if (continueBtn) continueBtn.disabled = !saved;
     if (saved) state = normalizeState(saved);
+    renderRewardWheel();
 })();
